@@ -3,14 +3,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Sale;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        $products = Product::all();
-        return view('inventory.index', compact('products'));
-    }
+    public function index(Request $request)
+{
+    $search = $request->input('search');
+
+    $products = Product::query()
+        ->when($search, function ($query, $search) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%"); // assuming 'category' is brand for now
+        })
+        ->get();
+
+    return view('inventory.index', compact('products', 'search'));
+}
+
 
     public function create()
     {
@@ -54,4 +64,25 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')->with('success', 'Product deleted!');
     }
+    
+
+    public function dashboard()
+    {
+        $topProducts = Sale::selectRaw('product_id, SUM(quantity) as total_sold')
+            ->whereMonth('created_at', now()->month)
+            ->groupBy('product_id')
+            ->orderByDesc('total_sold')
+            ->with('product')
+            ->take(5)
+            ->get();
+
+        $labels = $topProducts->map(fn($sale) => $sale->product->name);
+        $values = $topProducts->pluck('total_sold');
+
+        return view('inventory.dashboard', [
+            'labels' => $labels,
+            'values' => $values,
+        ]);
+    }
+    
 }

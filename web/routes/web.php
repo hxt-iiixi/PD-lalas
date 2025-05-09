@@ -8,3 +8,4 @@ Route::get('/', function () {
 });
 
 Route::resource('products', ProductController::class);
+Route::get('/dashboard', [ProductController::class, 'dashboard'])->name('dashboard');

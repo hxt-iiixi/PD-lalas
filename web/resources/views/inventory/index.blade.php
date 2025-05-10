@@ -85,23 +85,36 @@
 <script>
     function openModal() {
         const modal = document.getElementById('modalBox');
+        const overlay = document.getElementById('modalOverlay');
         modal.style.display = 'block';
+        overlay.style.display = 'block';
         modal.classList.remove('hide');
         modal.classList.add('show');
     }
 
     function closeModal() {
         const modal = document.getElementById('modalBox');
-
+        const overlay = document.getElementById('modalOverlay');
         modal.classList.remove('show');
         modal.classList.add('hide');
+        overlay.style.display = 'none';
 
-        // Wait for animation before fully hiding
         setTimeout(() => {
             modal.style.display = 'none';
             modal.classList.remove('hide');
-        }, 300); // match CSS transition duration
+        }, 300);
     }
 
+    // Click outside modal content to close
+    window.addEventListener('click', function(e) {
+        const modal = document.getElementById('modalBox');
+        const overlay = document.getElementById('modalOverlay');
+
+        if (e.target === overlay) {
+            closeModal();
+        }
+    });
 </script>
+
+
 @endsection

@@ -1,10 +1,8 @@
-/* General Success Message */
 .success {
     color: green;
     margin-bottom: 10px;
 }
 
-/* Top Bar with Search and Button */
 .top-bar {
     display: flex;
     justify-content: space-between;
@@ -14,18 +12,16 @@
     margin-bottom: 20px;
 }
 
-/* Search Form */
 .search-form {
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .search-form input {
     padding: 8px;
     border-radius: 5px;
     border: 1px solid #ccc;
-    width: 200px;
 }
 
 .search-form button,
@@ -37,19 +33,20 @@
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
+    transition: transform 0.2s ease;
+}
+
+.search-form button:hover,
+.clear-btn:hover,
+button:hover {
+    transform: scale(1.05);
 }
 
 .clear-btn {
     background-color: #888;
     text-decoration: none;
-    padding: 8px 14px;
 }
 
-.search-form button:hover {
-    background-color: #388e3c;
-}
-
-/* General Buttons */
 button {
     background-color: #3490dc;
     color: white;
@@ -61,33 +58,6 @@ button {
     transition: background-color 0.3s ease;
 }
 
-button:hover {
-    background-color: #2779bd;
-}
-
-/* Add fade/slide animation keyframes */
-@keyframes slideFadeIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -60%) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
-}
-
-
-
 .modal-box {
     position: fixed;
     top: 50%;
@@ -98,41 +68,24 @@ button:hover {
     width: 90%;
     max-width: 500px;
     border-radius: 10px;
-    z-index: 1100;*/
+    z-index: 1100;
     display: none;
     opacity: 0;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* When modal is shown */
-.modal-overlay.show {
-    display: block;
-    animation: slideFadeIn 0.3s ease forwards;
-}
-
 .modal-box.show {
-    display: block;
-    animation: slideFadeIn 0.3s ease forwards;
-}
-.modal-box.hide {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95);
-    pointer-events: none;
-  }
-
-/* Show Modal */
-.modal-box.show,
-.modal-overlay.show {
     display: block;
     opacity: 1;
 }
 
-.modal-box.show {
-    transform: translate(-50%, -50%) scale(1);
+.modal-box.hide {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+    pointer-events: none;
 }
 
-/* Modal Header */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -145,18 +98,23 @@ button:hover {
     font-weight: bold;
 }
 
-/* Modal Form Inputs */
 .modal-box input[type="text"],
 .modal-box input[type="number"] {
-    width: 100%;
+    width: 95%;
     padding: 8px;
     margin-top: 4px;
     margin-bottom: 12px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1099;
+    display: none;
+}
 
-/* Table Styles */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -164,7 +122,8 @@ table {
     margin-top: 20px;
 }
 
-table th, table td {
+table th,
+table td {
     border: 1px solid #ccc;
     padding: 8px;
     text-align: left;
@@ -174,39 +133,31 @@ table th {
     background-color: #f0f0f0;
 }
 
-/* 📱 Mobile and Tablet Responsiveness */
 @media (max-width: 768px) {
-    .top-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
     .search-form {
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: nowrap;
         width: 100%;
     }
 
-    .search-form input,
-    .search-form button,
-    .clear-btn {
-        width: 100%;
+    .search-form input {
+        flex: 1;
+    }
+
+    .search-form button {
+        padding: 8px;
     }
 
     .modal-box {
-        width: 95%;
+        width: 85%;
         padding: 15px;
-    }
-
-    button {
-        width: 100%;
     }
 
     table {
         font-size: 14px;
     }
 
-    table th, table td {
+    table th,
+    table td {
         padding: 6px;
     }
 }

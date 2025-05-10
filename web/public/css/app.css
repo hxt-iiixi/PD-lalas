@@ -1,4 +1,3 @@
-/* Layout Base */
 body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
@@ -17,9 +16,8 @@ body {
     box-sizing: border-box;
 }
 
-.sidebar .logo {
-    font-size: 20px;
-    font-weight: bold;
+.sidebar h3 {
+    margin-top: 0;
     margin-bottom: 30px;
 }
 
@@ -42,9 +40,69 @@ body {
     text-decoration: underline;
 }
 
+.hamburger {
+    width: auto;
+    display: none;
+    position: fixed;
+    top: 8px;
+    left: 20px;
+    font-size: 26px;
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 50%;
+    z-index: 1001;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.hamburger:hover {
+    transform: scale(1.1);
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1002;
+}
+
+.overlay.show {
+    display: block;
+}
+
 .content {
     flex: 1;
     padding: 30px;
     background: #def2f1;
     box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -220px;
+        height: 100%;
+        width: 220px;
+        background: #2b7a78;
+        transition: left 0.3s ease;
+        z-index: 1003;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .hamburger {
+        display: block;
+    }
+
+    .content {
+        margin-left: 0;
+        padding-top: 60px;
+    }
 }

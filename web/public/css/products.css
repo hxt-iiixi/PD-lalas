@@ -58,6 +58,7 @@ button {
     transition: background-color 0.3s ease;
 }
 
+/* Shared modal base */
 .modal-box {
     position: fixed;
     top: 50%;
@@ -86,6 +87,17 @@ button {
     pointer-events: none;
 }
 
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1099;
+    display: none;
+}
+.modal-overlay.show {
+    display: block;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -107,14 +119,8 @@ button {
     border: 1px solid #ccc;
     border-radius: 5px;
 }
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1099;
-    display: none;
-}
 
+/* Table */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -126,13 +132,34 @@ table th,
 table td {
     border: 1px solid #ccc;
     padding: 8px;
-    text-align: left;
+    text-align: center;
 }
 
 table th {
     background-color: #f0f0f0;
 }
 
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 2000;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .search-form {
         flex-wrap: nowrap;

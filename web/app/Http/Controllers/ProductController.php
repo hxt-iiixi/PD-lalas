@@ -7,16 +7,25 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index()
+   public function index(Request $request)
     {
-        $search = request('search');
+        $search = $request->query('search');
+
         $products = Product::when($search, function ($query, $search) {
-            return $query->where('name', 'like', "%{$search}%")
-                         ->orWhere('brand', 'like', "%{$search}%");
-        })->get();
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('brand', 'like', "%{$search}%");
+        })->orderBy('created_at', 'desc')->paginate(15);
+
+        if ($request->ajax()) {
+            return view('inventory.partials.table', compact('products'))->render();
+        }
 
         return view('inventory.index', compact('products'));
     }
+
+
+    
+
 
     public function store(Request $request)
     {
@@ -59,5 +68,13 @@ class ProductController extends Controller
         return response()->json([
             'message' => 'Product deleted successfully!',
         ]);
+    }
+
+    public function restore($id)
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+
+        return response()->json(['message' => 'Product restored successfully!']);
     }
 }

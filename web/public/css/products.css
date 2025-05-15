@@ -1,3 +1,7 @@
+body {
+    font-family: 'Lexend';
+}
+
 .success {
     color: green;
     margin-bottom: 10px;
@@ -11,6 +15,63 @@
     gap: 10px;
     margin-bottom: 20px;
 }
+
+.search-bar {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 100%;
+    max-width: 350px;
+    font-size: 16px;
+}
+
+#productContainer {
+    transition: all 0.4s ease-in-out;
+}
+
+.slide-left {
+    animation: smoothSlideLeft 0.4s ease-in-out forwards;
+}
+.slide-right {
+    animation: smoothSlideRight 0.4s ease-in-out forwards;
+}
+
+.fade {
+    animation: fadeIn 0.3s ease-in;
+}
+@keyframes smoothSlideLeft {
+    0% { opacity: 0; transform: translateX(60px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes smoothSlideRight {
+    0% { opacity: 0; transform: translateX(-60px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInRow {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+.new-row {
+    animation: fadeInRow 0.3s ease-in-out;
+}
+
+@keyframes rowFadeOut {
+    from { opacity: 1; height: 50px; }
+    to { opacity: 0; height: 0; padding: 0; margin: 0; border: 0; }
+}
+.row-fade-out {
+    animation: rowFadeOut 0.5s forwards;
+}
+
+
 
 .search-form {
     display: flex;
@@ -58,7 +119,20 @@ button {
     transition: background-color 0.3s ease;
 }
 
-/* Shared modal base */
+/* Modal and Overlay */
+.modal-overlay,
+.modal-box {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+.modal-overlay.show,
+.modal-box.show {
+    opacity: 1;
+    visibility: visible;
+}
+
 .modal-box {
     position: fixed;
     top: 50%;
@@ -70,32 +144,7 @@ button {
     max-width: 500px;
     border-radius: 10px;
     z-index: 1100;
-    display: none;
-    opacity: 0;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.modal-box.show {
-    display: block;
-    opacity: 1;
-}
-
-.modal-box.hide {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95);
-    pointer-events: none;
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 1099;
-    display: none;
-}
-.modal-overlay.show {
-    display: block;
 }
 
 .modal-header {
@@ -120,6 +169,20 @@ button {
     border-radius: 5px;
 }
 
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1099;
+    display: none;
+}
+.modal-overlay.show {
+    display: block;
+}
+
 /* Table */
 table {
     width: 100%;
@@ -137,6 +200,50 @@ table td {
 
 table th {
     background-color: #f0f0f0;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    max-width: 160px;
+    margin: 0 auto;
+}
+
+.action-buttons button {
+    padding: 4px 10px;
+    font-size: 13px;
+    line-height: 1.2;
+    border-radius: 4px;
+    white-space: nowrap;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.action-buttons button:first-child {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+}
+
+.action-buttons button:last-child {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+}
+
+.action-buttons button:hover {
+    opacity: 0.9;
+    transform: scale(1.03);
+}
+
+table th:last-child,
+table td:last-child {
+    width: 140px;
+    max-width: 140px;
+    text-align: center;
 }
 
 /* Toast Notification */
@@ -157,6 +264,15 @@ table th {
 .toast.show {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Deleted Row Fade-out Animation */
+.fade-out {
+    animation: fadeOutRow 0.5s forwards;
+}
+@keyframes fadeOutRow {
+    from { opacity: 1; height: 50px; }
+    to { opacity: 0; height: 0; padding: 0; margin: 0; border: 0; }
 }
 
 /* Responsive */
@@ -186,5 +302,16 @@ table th {
     table th,
     table td {
         padding: 6px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .action-buttons button {
+        width: 100%;
+        font-size: 14px;
     }
 }

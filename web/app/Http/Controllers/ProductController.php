@@ -10,11 +10,17 @@ class ProductController extends Controller
    public function index(Request $request)
     {
         $search = $request->query('search');
+        $category = $request->query('category');
 
         $products = Product::when($search, function ($query, $search) {
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('brand', 'like', "%{$search}%");
-        })->orderBy('created_at', 'desc')->paginate(15);
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%");
+            })
+            ->when($category, function ($query, $category) {
+                $query->where('category', $category);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
         if ($request->ajax()) {
             return view('inventory.partials.table', compact('products'))->render();
@@ -22,6 +28,7 @@ class ProductController extends Controller
 
         return view('inventory.index', compact('products'));
     }
+
 
 
     
@@ -34,15 +41,17 @@ class ProductController extends Controller
             'brand' => 'required',
             'selling_price' => 'required|numeric',
             'stock' => 'required|integer',
+            'category' => 'required|in:medicine,supplies',
         ]);
 
-        $product = Product::create($request->only('name', 'brand', 'selling_price', 'stock'));
+        $product = Product::create($request->only('name', 'brand', 'selling_price', 'stock', 'category'));
 
         return response()->json([
             'message' => 'Product added successfully!',
             'product' => $product,
         ]);
     }
+
 
     public function update(Request $request, Product $product)
     {
@@ -61,14 +70,25 @@ class ProductController extends Controller
         ]);
     }
 
-    public function destroy(Product $product)
-    {
-        $product->delete();
+public function destroy($id)
+{
+    $product = Product::findOrFail($id);
+    $productName = $product->name;
+    $productId = $product->id;
 
-        return response()->json([
-            'message' => 'Product deleted successfully!',
-        ]);
-    }
+    $product->delete();
+
+    // Store info in session for toast after reload
+    session()->flash('deleted_product_id', $productId);
+    session()->flash('deleted_product_name', $productName);
+
+    return response()->json([
+        'message' => "$productName deleted.",
+        'undoId' => $productId,
+    ]);
+}
+
+
 
     public function restore($id)
     {

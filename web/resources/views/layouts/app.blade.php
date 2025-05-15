@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css?family=Lexend" rel="stylesheet">
 </head>
 <body>
     <!-- Hamburger Button (move outside layout for proper absolute positioning) -->
@@ -17,7 +17,7 @@
             <h3>My Pharmacy</h3>
             <ul>
                 <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ route('products.index') }}">Products</a></li>
+                <li><a href="{{ route('products.index') }}">Invevntory</a></li>
             </ul>
         </div>
         <!-- Overlay -->

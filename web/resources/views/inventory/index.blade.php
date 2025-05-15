@@ -15,6 +15,15 @@
     <button onclick="openAddModal()">+ Add Product</button>
 </div>
 
+<!-- Category Tabs -->
+<div class="filter-tabs" style="margin: 20px 0;">
+    <a href="{{ route('products.index') }}" class="{{ request('category') ? '' : 'active' }}">All</a>
+    <a href="{{ route('products.index', ['category' => 'medicine']) }}" class="{{ request('category') === 'medicine' ? 'active' : '' }}">Medicines</a>
+    <a href="{{ route('products.index', ['category' => 'supplies']) }}" class="{{ request('category') === 'supplies' ? 'active' : '' }}">Supplies</a>
+</div>
+
+
+
 <div id="toast" class="toast">Action completed</div>
 
 <!-- Modals -->
@@ -35,10 +44,16 @@
         <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
         <label>Stocks</label>
         <input type="number" name="stock" id="inputStock" required>
+        <label>Category</label>
+        <select name="category" id="inputCategory" required>
+            <option value="medicine">Medicine</option>
+            <option value="supplies">Supplies</option>
+        </select>
         <button type="submit" id="formButton">Add</button>
     </form>
 </div>
 
+<!-- Delete Confirmation Modal -->
 <div id="deleteOverlay" class="modal-overlay" onclick="closeDeleteModal()"></div>
 <div id="deleteModal" class="modal-box">
     <div class="modal-header">
@@ -56,6 +71,14 @@
     @include('inventory.partials.table')
 </div>
 
+@if(session('deleted_product_id'))
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        showToast("{{ session('deleted_product_name') }} deleted.", false, {{ session('deleted_product_id') }});
+    });
+</script>
+@endif
+
 <script>
 let deleteTargetId = null;
 let deletedRowData = null;
@@ -66,12 +89,18 @@ function openAddModal() {
     document.getElementById('formButton').innerText = 'Add';
     document.getElementById('productForm').action = '/products';
     document.getElementById('formMethod').value = 'POST';
+
     document.getElementById('inputName').value = '';
     document.getElementById('inputBrand').value = '';
     document.getElementById('inputPrice').value = '';
     document.getElementById('inputStock').value = '';
+    document.getElementById('inputCategory').value = 'medicine'; // or 'supplies' if you prefer
+
     showModal();
+
+    setTimeout(() => document.getElementById('inputName').focus(), 100); // Auto-focus input
 }
+
 
 function openEditModal(product) {
     document.getElementById('modalTitle').innerText = 'Edit Product';
@@ -82,6 +111,7 @@ function openEditModal(product) {
     document.getElementById('inputBrand').value = product.brand;
     document.getElementById('inputPrice').value = product.selling_price;
     document.getElementById('inputStock').value = product.stock;
+    document.getElementById('inputCategory').value = product.category;
     showModal();
 }
 
@@ -106,9 +136,11 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
         brand: document.getElementById('inputBrand').value,
         selling_price: document.getElementById('inputPrice').value,
         stock: document.getElementById('inputStock').value,
+        category: document.getElementById('inputCategory').value, // ✅ make sure this line exists
         _token: '{{ csrf_token() }}',
         _method: method
     };
+
 
     fetch(url, {
         method: 'POST',
@@ -119,24 +151,7 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     .then(response => {
         showToast(response.message || 'Saved!');
         closeModal();
-
-        const tableBody = document.querySelector('table tbody');
-        const newRow = document.createElement('tr');
-        newRow.setAttribute('data-id', response.product.id);
-        newRow.innerHTML = `
-            <td>${response.product.name}</td>
-            <td>${response.product.brand}</td>
-            <td>${response.product.selling_price}</td>
-            <td>${response.product.stock}</td>
-            <td>
-                <div class="action-buttons">
-                    <button onclick='openEditModal(${JSON.stringify(response.product)})'>Edit</button>
-                    <button onclick='triggerDelete(${response.product.id}, "${response.product.name}")'>Delete</button>
-                </div>
-            </td>
-        `;
-        newRow.classList.add('row-fade-in');
-        tableBody.prepend(newRow);
+        location.reload();
     })
     .catch(error => {
         console.error(error);
@@ -161,7 +176,9 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
     if (!deleteTargetId) return;
 
     const row = document.querySelector(`tr[data-id="${deleteTargetId}"]`);
-    deletedRowData = row ? row.cloneNode(true) : null;
+        if (row) {
+            deletedRowData = row.cloneNode(true);
+        }
 
     fetch(`/products/${deleteTargetId}`, {
         method: 'POST',
@@ -176,26 +193,14 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
         return res.json();
     })
     .then(data => {
-        showToast(data.message || "Deleted.", false, deleteTargetId);
-        closeDeleteModal();
-
-        const row = document.querySelector(`tr[data-id="${deleteTargetId}"]`);
-        if (row) {
-            row.remove();
-
-            const rowsLeft = document.querySelectorAll('table tbody tr[data-id]').length;
-            if (rowsLeft === 0) {
-                document.querySelector('table tbody').innerHTML = '<tr><td colspan="5">No products found.</td></tr>';
-            }
-        }
-
-        deleteTargetId = null;
+        location.reload();
     })
     .catch(err => {
         console.error(err);
         showToast("Delete failed.", true);
     });
 });
+
 
 function undoDelete(id) {
     fetch(`/products/${id}/restore`, {
@@ -208,17 +213,15 @@ function undoDelete(id) {
     .then(res => res.json())
     .then(data => {
         showToast(data.message || "Undo complete.");
-        if (deletedRowData) {
-            const tableBody = document.querySelector('table tbody');
-            tableBody.prepend(deletedRowData);
-            deletedRowData = null;
-        }
+        location.reload(); // ✅ reload to show restored row
     })
     .catch(err => {
         console.error(err);
         showToast("Undo failed.", true);
     });
 }
+
+
 
 function showToast(message, isError = false, undoId = null) {
     const toast = document.getElementById('toast');
@@ -248,6 +251,65 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.text())
             .then(html => {
                 container.innerHTML = html;
+
+                container.classList.remove('slide-left', 'slide-right', 'fade');
+                void container.offsetWidth; // force reflow
+                container.classList.add(direction);
+
+                currentPage = parseInt(page);
+            });
+        }
+    });
+});
+let deleteTargetId = null;
+let deletedRowData = null;
+let currentPage = 1;
+let currentCategory = '{{ request('category') ?? 'all' }}';
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('click', function (e) {
+        const categoryBtn = e.target.closest('.filter-tabs a');
+        if (categoryBtn) {
+            e.preventDefault();
+            const link = categoryBtn.href;
+            const newCategory = new URL(link).searchParams.get('category') || 'all';
+            const direction = newCategory > currentCategory ? 'slide-up' : 'slide-down';
+            currentCategory = newCategory;
+
+            const container = document.getElementById('productContainer');
+
+            document.querySelectorAll('.filter-tabs a').forEach(btn => btn.classList.remove('active'));
+            categoryBtn.classList.add('active');
+
+            fetch(link, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.text())
+            .then(html => {
+                container.innerHTML = html;
+                container.classList.remove('slide-up', 'slide-down', 'fade');
+                void container.offsetWidth;
+                container.classList.add(direction);
+            });
+
+            return;
+        }
+
+        const paginationLink = e.target.closest('.pagination a');
+        if (paginationLink) {
+            e.preventDefault();
+            const link = paginationLink.href;
+            const page = new URL(link).searchParams.get('page');
+            const direction = parseInt(page) > currentPage ? 'slide-left' : 'slide-right';
+
+            const container = document.getElementById('productContainer');
+
+            fetch(link, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.text())
+            .then(html => {
+                container.innerHTML = html;
                 container.classList.remove('slide-left', 'slide-right', 'fade');
                 void container.offsetWidth;
                 container.classList.add(direction);
@@ -256,5 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+
 </script>
 @endsection

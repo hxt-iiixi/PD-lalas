@@ -11,16 +11,22 @@ class ProductController extends Controller
     {
         $search = $request->query('search');
         $category = $request->query('category');
+        $lowStock = $request->query('low_stock');
 
-        $products = Product::when($search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('brand', 'like', "%{$search}%");
-            })
-            ->when($category, function ($query, $category) {
-                $query->where('category', $category);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            $products = Product::when($search, function ($query, $search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%");
+                })
+                ->when($category, function ($query, $category) {
+                    $query->where('category', $category);
+                })
+                ->when($lowStock, function ($query) {
+                    $query->where('stock', '<', 21)->orderBy('stock', 'asc');
+                })
+
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+
 
         if ($request->ajax()) {
             return view('inventory.partials.table', compact('products'))->render();
@@ -28,11 +34,6 @@ class ProductController extends Controller
 
         return view('inventory.index', compact('products'));
     }
-
-
-
-    
-
 
     public function store(Request $request)
     {

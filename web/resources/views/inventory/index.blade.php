@@ -12,15 +12,30 @@
             <a href="{{ route('products.index') }}" class="clear-btn">Clear</a>
         @endif
     </form>
-    <button onclick="openAddModal()">+ Add Product</button>
+
+    <div class="button-group">
+        <button id="filterLowStock" class="button-fill red-button">Show Low Stock</button>
+        <button class="button-fill green-button" onclick="openAddModal()">+ Add Product</button>
+    </div>
 </div>
 
+
 <!-- Category Tabs -->
-<div class="filter-tabs" style="margin: 20px 0;">
-    <a href="{{ route('products.index') }}" class="{{ request('category') ? '' : 'active' }}">All</a>
-    <a href="{{ route('products.index', ['category' => 'medicine']) }}" class="{{ request('category') === 'medicine' ? 'active' : '' }}">Medicines</a>
-    <a href="{{ route('products.index', ['category' => 'supplies']) }}" class="{{ request('category') === 'supplies' ? 'active' : '' }}">Supplies</a>
+@php
+    $isLowStock = request()->has('low_stock') ? ['low_stock' => 1] : [];
+@endphp
+
+<div class="filter-tabs">
+    <a href="{{ route('products.index', array_merge([], $isLowStock)) }}"
+       class="category-tab {{ request('category') ? '' : 'active' }}">All</a>
+
+    <a href="{{ route('products.index', array_merge(['category' => 'medicine'], $isLowStock)) }}"
+       class="category-tab {{ request('category') === 'medicine' ? 'active' : '' }}">Medicines</a>
+
+    <a href="{{ route('products.index', array_merge(['category' => 'supplies'], $isLowStock)) }}"
+       class="category-tab {{ request('category') === 'supplies' ? 'active' : '' }}">Supplies</a>
 </div>
+
 
 
 
@@ -40,6 +55,9 @@
         <input type="text" name="name" id="inputName" required>
         <label>Brand</label>
         <input type="text" name="brand" id="inputBrand" required>
+        <label>Supplier Price</label>
+        <input type="number" name="supplier_price" id="inputSupplierPrice" step="0.01" required>
+
         <label>Selling Price</label>
         <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
         <label>Stocks</label>
@@ -49,7 +67,7 @@
             <option value="medicine">Medicine</option>
             <option value="supplies">Supplies</option>
         </select>
-        <button type="submit" id="formButton">Add</button>
+        <button type="submit" id="formButton" class="button-fill blue-button">Add</button>
     </form>
 </div>
 
@@ -63,7 +81,7 @@
     <p id="deleteMessage">Are you sure?</p>
     <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
         <button onclick="closeDeleteModal()">Cancel</button>
-        <button id="confirmDeleteBtn" style="background-color: red;">Yes, Delete</button>
+        <button id="confirmDeleteBtn" class="button-fill red-button">Yes, Delete</button>
     </div>
 </div>
 
@@ -83,24 +101,22 @@
 let deleteTargetId = null;
 let deletedRowData = null;
 let currentPage = 1;
+let currentCategory = '{{ request('category') ?? 'all' }}';
 
+// ✅ Functions moved to global scope
 function openAddModal() {
     document.getElementById('modalTitle').innerText = 'Add New Product';
     document.getElementById('formButton').innerText = 'Add';
     document.getElementById('productForm').action = '/products';
     document.getElementById('formMethod').value = 'POST';
-
     document.getElementById('inputName').value = '';
     document.getElementById('inputBrand').value = '';
     document.getElementById('inputPrice').value = '';
     document.getElementById('inputStock').value = '';
-    document.getElementById('inputCategory').value = 'medicine'; // or 'supplies' if you prefer
-
+    document.getElementById('inputCategory').value = 'medicine';
     showModal();
-
-    setTimeout(() => document.getElementById('inputName').focus(), 100); // Auto-focus input
+    setTimeout(() => document.getElementById('inputName').focus(), 100);
 }
-
 
 function openEditModal(product) {
     document.getElementById('modalTitle').innerText = 'Edit Product';
@@ -109,6 +125,7 @@ function openEditModal(product) {
     document.getElementById('formMethod').value = 'PUT';
     document.getElementById('inputName').value = product.name;
     document.getElementById('inputBrand').value = product.brand;
+    document.getElementById('inputSupplierPrice').value = product.supplier_price;
     document.getElementById('inputPrice').value = product.selling_price;
     document.getElementById('inputStock').value = product.stock;
     document.getElementById('inputCategory').value = product.category;
@@ -125,22 +142,65 @@ function closeModal() {
     document.getElementById('modalBox').classList.remove('show');
 }
 
+function triggerDelete(id, name) {
+    deleteTargetId = id;
+    document.getElementById('deleteMessage').textContent = `Are you sure you want to delete "${name}"?`;
+    document.getElementById('deleteModal').classList.add('show');
+    document.getElementById('deleteOverlay').classList.add('show');
+}
+
+function closeDeleteModal() {
+    deleteTargetId = null;
+    document.getElementById('deleteModal').classList.remove('show');
+    document.getElementById('deleteOverlay').classList.remove('show');
+}
+
+function undoDelete(id) {
+    fetch(`/products/${id}/restore`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message || "Undo complete.");
+        location.reload();
+    })
+    .catch(err => {
+        console.error(err);
+        showToast("Undo failed.", true);
+    });
+}
+
+function showToast(message, isError = false, undoId = null) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = message;
+    if (undoId) {
+        toast.innerHTML += ` <button onclick="undoDelete(${undoId})" style="margin-left:10px;">Undo</button>`;
+    }
+    toast.style.background = isError ? '#dc3545' : '#28a745';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+// Submit handler
 document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const form = e.target;
     const url = form.action;
     const method = document.getElementById('formMethod').value;
-
     const formData = {
         name: document.getElementById('inputName').value,
         brand: document.getElementById('inputBrand').value,
+        supplier_price: document.getElementById('inputSupplierPrice').value,
         selling_price: document.getElementById('inputPrice').value,
         stock: document.getElementById('inputStock').value,
-        category: document.getElementById('inputCategory').value, // ✅ make sure this line exists
+        category: document.getElementById('inputCategory').value,
         _token: '{{ csrf_token() }}',
         _method: method
     };
-
 
     fetch(url, {
         method: 'POST',
@@ -159,27 +219,9 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     });
 });
 
-function triggerDelete(id, name) {
-    deleteTargetId = id;
-    document.getElementById('deleteMessage').textContent = `Are you sure you want to delete "${name}"?`;
-    document.getElementById('deleteModal').classList.add('show');
-    document.getElementById('deleteOverlay').classList.add('show');
-}
-
-function closeDeleteModal() {
-    deleteTargetId = null;
-    document.getElementById('deleteModal').classList.remove('show');
-    document.getElementById('deleteOverlay').classList.remove('show');
-}
-
+// Delete handler
 document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
     if (!deleteTargetId) return;
-
-    const row = document.querySelector(`tr[data-id="${deleteTargetId}"]`);
-        if (row) {
-            deletedRowData = row.cloneNode(true);
-        }
-
     fetch(`/products/${deleteTargetId}`, {
         method: 'POST',
         headers: {
@@ -192,107 +234,38 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     })
-    .then(data => {
-        location.reload();
-    })
+    .then(() => location.reload())
     .catch(err => {
         console.error(err);
         showToast("Delete failed.", true);
     });
 });
 
-
-function undoDelete(id) {
-    fetch(`/products/${id}/restore`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        showToast(data.message || "Undo complete.");
-        location.reload(); // ✅ reload to show restored row
-    })
-    .catch(err => {
-        console.error(err);
-        showToast("Undo failed.", true);
-    });
-}
-
-
-
-function showToast(message, isError = false, undoId = null) {
-    const toast = document.getElementById('toast');
-    toast.innerHTML = message;
-    if (undoId) {
-        toast.innerHTML += ` <button onclick="undoDelete(${undoId})" style="margin-left:10px;">Undo</button>`;
-    }
-    toast.style.background = isError ? '#dc3545' : '#28a745';
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 5000);
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    document.addEventListener('click', function (e) {
-        const target = e.target.closest('.pagination a');
-        if (target) {
-            e.preventDefault();
-            const link = target.href;
-            const page = new URL(link).searchParams.get('page');
-            const direction = parseInt(page) > currentPage ? 'slide-left' : 'slide-right';
-
-            const container = document.getElementById('productContainer');
-
-            fetch(link, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.text())
-            .then(html => {
-                container.innerHTML = html;
-
-                container.classList.remove('slide-left', 'slide-right', 'fade');
-                void container.offsetWidth; // force reflow
-                container.classList.add(direction);
-
-                currentPage = parseInt(page);
-            });
-        }
-    });
-});
-let deleteTargetId = null;
-let deletedRowData = null;
-let currentPage = 1;
-let currentCategory = '{{ request('category') ?? 'all' }}';
-
+// Category/pagination
 document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('click', function (e) {
         const categoryBtn = e.target.closest('.filter-tabs a');
         if (categoryBtn) {
             e.preventDefault();
-            const link = categoryBtn.href;
-            const newCategory = new URL(link).searchParams.get('category') || 'all';
-            const direction = newCategory > currentCategory ? 'slide-up' : 'slide-down';
-            currentCategory = newCategory;
+            const url = new URL(categoryBtn.href);
+            const currentParams = new URLSearchParams(window.location.search);
+            if (currentParams.has('low_stock')) {
+                url.searchParams.set('low_stock', '1');
+            }
 
-            const container = document.getElementById('productContainer');
-
-            document.querySelectorAll('.filter-tabs a').forEach(btn => btn.classList.remove('active'));
-            categoryBtn.classList.add('active');
-
-            fetch(link, {
+            fetch(url.toString(), {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(res => res.text())
             .then(html => {
+                const container = document.getElementById('productContainer');
                 container.innerHTML = html;
-                container.classList.remove('slide-up', 'slide-down', 'fade');
+                container.classList.remove('slide-up', 'slide-down');
                 void container.offsetWidth;
-                container.classList.add(direction);
+                container.classList.add('slide-up'); // optional animation
             });
 
-            return;
+            return; // prevent default behavior
         }
 
         const paginationLink = e.target.closest('.pagination a');
@@ -301,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const link = paginationLink.href;
             const page = new URL(link).searchParams.get('page');
             const direction = parseInt(page) > currentPage ? 'slide-left' : 'slide-right';
-
             const container = document.getElementById('productContainer');
 
             fetch(link, {
@@ -310,12 +282,47 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.text())
             .then(html => {
                 container.innerHTML = html;
-                container.classList.remove('slide-left', 'slide-right', 'fade');
+                container.classList.remove('slide-left', 'slide-right');
                 void container.offsetWidth;
                 container.classList.add(direction);
                 currentPage = parseInt(page);
             });
         }
+    });
+});
+let lowStockMode = false;
+document.getElementById('filterLowStock').addEventListener('click', function () {
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    const isLowStockActive = params.get('low_stock') === '1';
+
+    if (isLowStockActive) {
+        params.delete('low_stock');
+        this.innerText = 'Show Low Stock';
+    } else {
+        params.set('low_stock', '1');
+        this.innerText = 'Show All';
+    }
+
+    // Preserve current category filter
+    const activeCategory = document.querySelector('.filter-tabs a.active');
+    if (activeCategory) {
+        const cat = new URL(activeCategory.href).searchParams.get('category');
+        if (cat) {
+            params.set('category', cat);
+        } else {
+            params.delete('category');
+        }
+    }
+
+    fetch(`?${params.toString()}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.text())
+    .then(html => {
+        document.getElementById('productContainer').innerHTML = html;
+        history.replaceState(null, '', `?${params.toString()}`);
     });
 });
 

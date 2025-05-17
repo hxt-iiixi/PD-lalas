@@ -419,3 +419,23 @@ button:hover {
         font-size: 14px;
     }
 }
+/* === "All" tab custom look === */
+.category-tab.all-active {
+    background: #007bff !important; /* Muted gray */
+    color: white !important;
+    z-index: 1 !important;
+    position: relative;
+    transition: none !important;
+}
+
+/* Disable fill hover effect on the All tab */
+.category-tab.all-active::before,
+.category-tab.all-active:hover::before,
+.category-tab.all-active:focus::before {
+    content: '';
+    display: block;
+    width: 0 !important;
+    height: 100%;
+    background: transparent !important;
+    transition: none !important;
+}

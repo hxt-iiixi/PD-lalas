@@ -3,37 +3,42 @@
         <tr>
             <th>Drug Name</th>
             <th>Brand</th>
-            <th>Supplier Price</th> <!-- new -->
+            <th>Supplier Price</th>
             <th>Selling Price</th>
             <th>Stocks</th>
             <th>Actions</th>
+            <th>Expiry Date</th> <!-- ✅ Now placed last -->
         </tr>
-    </thead> <!-- ✅ Missing this closing tag -->
+    </thead>
     <tbody>
         @forelse ($products as $product)
         <tr data-id="{{ $product->id }}">
             <td>{{ $product->name }}</td>
             <td>{{ $product->brand }}</td>
-            <td>{{ $product->supplier_price }}</td> <!-- new -->
+            <td>{{ $product->supplier_price }}</td>
             <td>{{ $product->selling_price }}</td>
-        <td class="{{ $product->stock < 21 ? 'low-stock-red' : ($product->stock < 50 ? 'low-stock-orange' : '') }}">
-            {{ $product->stock }}
-        </td>
-   
-
-
+            <td class="{{ $product->stock < 21 ? 'low-stock-red' : ($product->stock < 50 ? 'low-stock-orange' : '') }}">
+                {{ $product->stock }}
+            </td>
             <td>
                 <div class="action-buttons">
                     <button class="button-fill blue-button" onclick='openEditModal(@json($product))'>Edit</button>
                     <button class="button-fill red-button" onclick='triggerDelete({{ $product->id }}, "{{ $product->name }}")'>Delete</button>
                 </div>
             </td>
+            @php
+                $expiringSoon = $product->expiry_date && \Carbon\Carbon::parse($product->expiry_date)->lte(now()->addDays(6));
+            @endphp
+            <td style="{{ $expiringSoon ? 'background-color:#f8d7da;color:#721c24;font-weight:bold;' : '' }}">
+                {{ \Carbon\Carbon::parse($product->expiry_date)->format('Y-m-d') }}
+            </td>
         </tr>
         @empty
-        <tr><td colspan="6">No products found.</td></tr>
+        <tr><td colspan="7">No products found.</td></tr>
         @endforelse
     </tbody>
 </table>
+
 <div class="d-flex justify-content-center mt-4">
     {{ $products->withQueryString()->links() }}
 </div>

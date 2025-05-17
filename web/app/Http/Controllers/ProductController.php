@@ -7,26 +7,24 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-   public function index(Request $request)
+    public function index(Request $request)
     {
         $search = $request->query('search');
         $category = $request->query('category');
         $lowStock = $request->query('low_stock');
 
-            $products = Product::when($search, function ($query, $search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('brand', 'like', "%{$search}%");
-                })
-                ->when($category, function ($query, $category) {
-                    $query->where('category', $category);
-                })
-                ->when($lowStock, function ($query) {
-                    $query->where('stock', '<', 21)->orderBy('stock', 'asc');
-                })
-
-                ->orderBy('created_at', 'desc')
-                ->paginate(15);
-
+        $products = Product::when($search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('brand', 'like', "%{$search}%");
+            })
+            ->when($category, function ($query, $category) {
+                $query->where('category', $category);
+            })
+            ->when($lowStock, function ($query) {
+                $query->where('stock', '<', 21)->orderBy('stock', 'asc');
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
         if ($request->ajax()) {
             return view('inventory.partials.table', compact('products'))->render();
@@ -43,16 +41,18 @@ class ProductController extends Controller
             'selling_price' => 'required|numeric',
             'stock' => 'required|integer',
             'category' => 'required|in:medicine,supplies',
+            'expiry_date' => 'required|date|after:today',
         ]);
 
-        $product = Product::create($request->only('name', 'brand', 'selling_price', 'stock', 'category'));
+        $product = Product::create($request->only([
+            'name', 'brand', 'selling_price', 'stock', 'category', 'expiry_date'
+        ]));
 
         return response()->json([
             'message' => 'Product added successfully!',
             'product' => $product,
         ]);
     }
-
 
     public function update(Request $request, Product $product)
     {
@@ -61,9 +61,12 @@ class ProductController extends Controller
             'brand' => 'required',
             'selling_price' => 'required|numeric',
             'stock' => 'required|integer',
+            'expiry_date' => 'required|date|after:today',
         ]);
 
-        $product->update($request->only('name', 'brand', 'selling_price', 'stock'));
+        $product->update($request->only([
+            'name', 'brand', 'selling_price', 'stock', 'expiry_date'
+        ]));
 
         return response()->json([
             'message' => 'Product updated successfully!',
@@ -71,25 +74,22 @@ class ProductController extends Controller
         ]);
     }
 
-public function destroy($id)
-{
-    $product = Product::findOrFail($id);
-    $productName = $product->name;
-    $productId = $product->id;
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+        $productName = $product->name;
+        $productId = $product->id;
 
-    $product->delete();
+        $product->delete();
 
-    // Store info in session for toast after reload
-    session()->flash('deleted_product_id', $productId);
-    session()->flash('deleted_product_name', $productName);
+        session()->flash('deleted_product_id', $productId);
+        session()->flash('deleted_product_name', $productName);
 
-    return response()->json([
-        'message' => "$productName deleted.",
-        'undoId' => $productId,
-    ]);
-}
-
-
+        return response()->json([
+            'message' => "$productName deleted.",
+            'undoId' => $productId,
+        ]);
+    }
 
     public function restore($id)
     {

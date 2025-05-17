@@ -26,15 +26,17 @@
 @endphp
 
 <div class="filter-tabs">
-    <a href="{{ route('products.index', array_merge([], $isLowStock)) }}"
-       class="category-tab {{ request('category') ? '' : 'active' }}">All</a>
+   <a href="{{ route('products.index', array_merge([], $isLowStock)) }}"
+   class="category-tab {{ request()->get('category') === null ? 'all-active' : '' }}">All</a>
 
     <a href="{{ route('products.index', array_merge(['category' => 'medicine'], $isLowStock)) }}"
-       class="category-tab {{ request('category') === 'medicine' ? 'active' : '' }}">Medicines</a>
+    class="category-tab {{ request()->get('category') === 'medicine' ? 'active' : '' }}">Medicines</a>
 
     <a href="{{ route('products.index', array_merge(['category' => 'supplies'], $isLowStock)) }}"
-       class="category-tab {{ request('category') === 'supplies' ? 'active' : '' }}">Supplies</a>
+    class="category-tab {{ request()->get('category') === 'supplies' ? 'active' : '' }}">Supplies</a>
+
 </div>
+
 
 
 
@@ -57,7 +59,6 @@
         <input type="text" name="brand" id="inputBrand" required>
         <label>Supplier Price</label>
         <input type="number" name="supplier_price" id="inputSupplierPrice" step="0.01" required>
-
         <label>Selling Price</label>
         <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
         <label>Stocks</label>
@@ -67,6 +68,9 @@
             <option value="medicine">Medicine</option>
             <option value="supplies">Supplies</option>
         </select>
+        <label>Expiry Date</label>
+        <input type="date" name="expiry_date" id="inputExpiryDate" required>
+
         <button type="submit" id="formButton" class="button-fill blue-button">Add</button>
     </form>
 </div>
@@ -99,11 +103,8 @@
 
 <script>
 let deleteTargetId = null;
-let deletedRowData = null;
 let currentPage = 1;
-let currentCategory = '{{ request('category') ?? 'all' }}';
 
-// ✅ Functions moved to global scope
 function openAddModal() {
     document.getElementById('modalTitle').innerText = 'Add New Product';
     document.getElementById('formButton').innerText = 'Add';
@@ -114,6 +115,7 @@ function openAddModal() {
     document.getElementById('inputPrice').value = '';
     document.getElementById('inputStock').value = '';
     document.getElementById('inputCategory').value = 'medicine';
+    document.getElementById('inputExpiryDate').value = '';
     showModal();
     setTimeout(() => document.getElementById('inputName').focus(), 100);
 }
@@ -129,6 +131,7 @@ function openEditModal(product) {
     document.getElementById('inputPrice').value = product.selling_price;
     document.getElementById('inputStock').value = product.stock;
     document.getElementById('inputCategory').value = product.category;
+    document.getElementById('inputExpiryDate').value = product.expiry_date;
     showModal();
 }
 
@@ -136,7 +139,6 @@ function showModal() {
     document.getElementById('modalOverlay').classList.add('show');
     document.getElementById('modalBox').classList.add('show');
 }
-
 function closeModal() {
     document.getElementById('modalOverlay').classList.remove('show');
     document.getElementById('modalBox').classList.remove('show');
@@ -185,7 +187,6 @@ function showToast(message, isError = false, undoId = null) {
     setTimeout(() => toast.classList.remove('show'), 5000);
 }
 
-// Submit handler
 document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const form = e.target;
@@ -198,6 +199,7 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
         selling_price: document.getElementById('inputPrice').value,
         stock: document.getElementById('inputStock').value,
         category: document.getElementById('inputCategory').value,
+        expiry_date: document.getElementById('inputExpiryDate').value,
         _token: '{{ csrf_token() }}',
         _method: method
     };
@@ -219,7 +221,6 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     });
 });
 
-// Delete handler
 document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
     if (!deleteTargetId) return;
     fetch(`/products/${deleteTargetId}`, {
@@ -241,16 +242,77 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
     });
 });
 
-// Category/pagination
+document.getElementById('filterLowStock').addEventListener('click', function () {
+    const button = this;
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    const isLowStockActive = params.get('low_stock') === '1';
+    if (isLowStockActive) {
+        params.delete('low_stock');
+        button.innerText = 'Show Low Stock';
+    } else {
+        params.set('low_stock', '1');
+        button.innerText = 'Show All';
+    }
+
+    const activeCategory = document.querySelector('.category-tab.active, .category-tab.all-active');
+    if (activeCategory) {
+        const cat = new URL(activeCategory.href).searchParams.get('category');
+        if (cat) {
+            params.set('category', cat);
+        } else {
+            params.delete('category');
+        }
+    }
+
+    fetch(`?${params.toString()}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.text())
+    .then(html => {
+        const container = document.getElementById('productContainer');
+        container.innerHTML = html;
+
+        const activeTab = document.querySelector('.category-tab.active, .category-tab.all-active');
+        if (activeTab) {
+            activeTab.classList.remove('active', 'all-active');
+            void activeTab.offsetWidth;
+            activeTab.classList.add(activeTab.classList.contains('category-tab') && !params.get('category') ? 'all-active' : 'active');
+        }
+
+        history.replaceState(null, '', `?${params.toString()}`);
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function () {
+    // ✅ Sync low stock button text with URL
+    const lowStockParam = new URLSearchParams(window.location.search).get('low_stock');
+    const lowStockBtn = document.getElementById('filterLowStock');
+    if (lowStockParam === '1') {
+        lowStockBtn.innerText = 'Show All';
+    } else {
+        lowStockBtn.innerText = 'Show Low Stock';
+    }
+
+    // ✅ Repaint "All" tab on load
+    const allTab = document.querySelector('.category-tab.all-active');
+    if (allTab) {
+        allTab.classList.remove('all-active');
+        void allTab.offsetWidth;
+        allTab.classList.add('all-active');
+    }
+
     document.addEventListener('click', function (e) {
         const categoryBtn = e.target.closest('.filter-tabs a');
         if (categoryBtn) {
             e.preventDefault();
             const url = new URL(categoryBtn.href);
-            const currentParams = new URLSearchParams(window.location.search);
-            if (currentParams.has('low_stock')) {
+            const lowStockActive = document.getElementById('filterLowStock')?.innerText === 'Show All';
+            if (lowStockActive) {
                 url.searchParams.set('low_stock', '1');
+            } else {
+                url.searchParams.delete('low_stock');
             }
 
             fetch(url.toString(), {
@@ -262,10 +324,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 container.innerHTML = html;
                 container.classList.remove('slide-up', 'slide-down');
                 void container.offsetWidth;
-                container.classList.add('slide-up'); // optional animation
+                container.classList.add('slide-up');
+
+                const allTabs = document.querySelectorAll('.category-tab');
+                allTabs.forEach(tab => tab.classList.remove('active', 'all-active'));
+
+                if (categoryBtn.innerText.trim().toLowerCase() === 'all') {
+                    categoryBtn.classList.add('all-active');
+                } else {
+                    categoryBtn.classList.add('active');
+                }
             });
 
-            return; // prevent default behavior
+            return;
         }
 
         const paginationLink = e.target.closest('.pagination a');
@@ -290,42 +361,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
-let lowStockMode = false;
-document.getElementById('filterLowStock').addEventListener('click', function () {
-    const url = new URL(window.location.href);
-    const params = url.searchParams;
-
-    const isLowStockActive = params.get('low_stock') === '1';
-
-    if (isLowStockActive) {
-        params.delete('low_stock');
-        this.innerText = 'Show Low Stock';
-    } else {
-        params.set('low_stock', '1');
-        this.innerText = 'Show All';
-    }
-
-    // Preserve current category filter
-    const activeCategory = document.querySelector('.filter-tabs a.active');
-    if (activeCategory) {
-        const cat = new URL(activeCategory.href).searchParams.get('category');
-        if (cat) {
-            params.set('category', cat);
-        } else {
-            params.delete('category');
-        }
-    }
-
-    fetch(`?${params.toString()}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(res => res.text())
-    .then(html => {
-        document.getElementById('productContainer').innerHTML = html;
-        history.replaceState(null, '', `?${params.toString()}`);
-    });
-});
-
-
 </script>
+
+
 @endsection

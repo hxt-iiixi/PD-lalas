@@ -17,7 +17,7 @@
             <h3>My Pharmacy</h3>
             <ul>
                 <li><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ route('products.index') }}">Invevntory</a></li>
+                <li><a href="{{ route('products.index') }}">Inventory</a></li>
             </ul>
         </div>
         <!-- Overlay -->

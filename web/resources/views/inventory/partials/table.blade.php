@@ -26,12 +26,20 @@
                     <button class="button-fill red-button" onclick='triggerDelete({{ $product->id }}, "{{ $product->name }}")'>Delete</button>
                 </div>
             </td>
-            @php
-                $expiringSoon = $product->expiry_date && \Carbon\Carbon::parse($product->expiry_date)->lte(now()->addDays(6));
+           @php
+                $expiry = \Carbon\Carbon::parse($product->expiry_date);
+                $today = \Carbon\Carbon::now()->startOfDay();
+                $daysDiff = $today->diffInDays($expiry, false);
+                $isToday = $expiry->isSameDay($today);
             @endphp
-            <td style="{{ $expiringSoon ? 'background-color:#f8d7da;color:#721c24;font-weight:bold;' : '' }}">
-                {{ \Carbon\Carbon::parse($product->expiry_date)->format('Y-m-d') }}
+
+            <td style="
+               {{ $isToday ? 'background-color:#ff0810;color:#000000;font-weight:bold;' : 
+                ($today >= $expiry->copy()->subMonths(6) && $today < $expiry ? 'background-color:#FF5F15;color:#000000;font-weight:bold;' : '') }}
+            ">
+            {{ $expiry->format('Y-m-d') }}
             </td>
+
         </tr>
         @empty
         <tr><td colspan="7">No products found.</td></tr>

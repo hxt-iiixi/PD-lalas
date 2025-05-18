@@ -12,10 +12,36 @@
             <a href="{{ route('products.index') }}" class="clear-btn">Clear</a>
         @endif
     </form>
-
     <div class="button-group">
-        <button id="filterLowStock" class="button-fill red-button">Show Low Stock</button>
-        <button class="button-fill green-button" onclick="openAddModal()">+ Add Product</button>
+          @php
+                $currentCategory = request('category');
+                $currentLowStock = request('low_stock') ? ['low_stock' => 1] : [];
+                $sortName = request('sort_name');
+                $sortExpiry = request('sort_expiry');
+            @endphp
+
+            <div class="filter-dropdown-wrapper">
+                <button class="filter-btn" onclick="toggleFilterMenu()">Filter</button>
+                <div id="filterMenu" class="filter-dropdown">
+                    <a href="{{ route('products.index', array_merge(['category' => $currentCategory], $currentLowStock, ['sort_name' => 'asc'])) }}"
+                    class="{{ $sortName === 'asc' ? 'active-sort' : '' }}">Sort: Name A–Z</a>
+
+                    <a href="{{ route('products.index', array_merge(['category' => $currentCategory], $currentLowStock, ['sort_name' => 'desc'])) }}"
+                    class="{{ $sortName === 'desc' ? 'active-sort' : '' }}">Sort: Name Z–A</a>
+
+                    <a href="{{ route('products.index', array_merge(['category' => $currentCategory], $currentLowStock, ['sort_expiry' => 'asc'])) }}"
+                    class="{{ $sortExpiry === 'asc' ? 'active-sort' : '' }}">Sort: Expiry Asc</a>
+
+                    <a href="{{ route('products.index', array_merge(['category' => $currentCategory], $currentLowStock, ['sort_expiry' => 'desc'])) }}"
+                    class="{{ $sortExpiry === 'desc' ? 'active-sort' : '' }}">Sort: Expiry Desc</a>
+
+                    <a href="{{ route('products.index', array_merge(['category' => $currentCategory], request()->except('low_stock'), ['low_stock' => request('low_stock') ? null : 1])) }}"
+                    class="{{ request('low_stock') ? 'active-sort' : '' }}">
+                        {{ request('low_stock') ? 'Show All Stock' : 'Show Low Stock' }}
+                    </a>
+                </div>
+            </div>
+            <button class="button-fill green-button" onclick="openAddModal()">+ Add Product</button>
     </div>
 </div>
 
@@ -50,28 +76,51 @@
         <h2 id="modalTitle">Add Product</h2>
         <span class="close-btn" onclick="closeModal()">&times;</span>
     </div>
-    <form id="productForm">
+    <form id="productForm" class="modal-form">
         @csrf
         <input type="hidden" id="formMethod" value="POST">
-        <label>Drug Name</label>
-        <input type="text" name="name" id="inputName" required>
-        <label>Brand</label>
-        <input type="text" name="brand" id="inputBrand" required>
-        <label>Supplier Price</label>
-        <input type="number" name="supplier_price" id="inputSupplierPrice" step="0.01" required>
-        <label>Selling Price</label>
-        <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
-        <label>Stocks</label>
-        <input type="number" name="stock" id="inputStock" required>
-        <label>Category</label>
-        <select name="category" id="inputCategory" required>
-            <option value="medicine">Medicine</option>
-            <option value="supplies">Supplies</option>
-        </select>
-        <label>Expiry Date</label>
-        <input type="date" name="expiry_date" id="inputExpiryDate" required>
 
-        <button type="submit" id="formButton" class="button-fill blue-button">Add</button>
+        <div>
+            <label>Drug Name</label>
+            <input type="text" name="name" id="inputName" required>
+        </div>
+
+        <div>
+            <label>Brand</label>
+            <input type="text" name="brand" id="inputBrand" required>
+        </div>
+
+        <div>
+            <label>Supplier Price</label>
+            <input type="number" name="supplier_price" id="inputSupplierPrice" step="0.01" required>
+        </div>
+
+        <div>
+            <label>Selling Price</label>
+            <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
+        </div>
+
+        <div>
+            <label>Stocks</label>
+            <input type="number" name="stock" id="inputStock" required>
+        </div>
+
+        <div>
+            <label>Category</label>
+            <select name="category" id="inputCategory" required>
+                <option value="medicine">Medicine</option>
+                <option value="supplies">Supplies</option>
+            </select>
+        </div>
+
+        <div class="full-width">
+            <label>Expiry Date</label>
+            <input type="date" name="expiry_date" id="inputExpiryDate" required>
+        </div>
+
+        <div class="full-width">
+            <button type="submit" id="formButton" class="button-fill blue-button">Add</button>
+        </div>
     </form>
 </div>
 
@@ -112,6 +161,7 @@ function openAddModal() {
     document.getElementById('formMethod').value = 'POST';
     document.getElementById('inputName').value = '';
     document.getElementById('inputBrand').value = '';
+    document.getElementById('inputSupplierPrice').value = '';
     document.getElementById('inputPrice').value = '';
     document.getElementById('inputStock').value = '';
     document.getElementById('inputCategory').value = 'medicine';
@@ -170,10 +220,7 @@ function undoDelete(id) {
         showToast(data.message || "Undo complete.");
         location.reload();
     })
-    .catch(err => {
-        console.error(err);
-        showToast("Undo failed.", true);
-    });
+    .catch(() => showToast("Undo failed.", true));
 }
 
 function showToast(message, isError = false, undoId = null) {
@@ -192,6 +239,7 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     const form = e.target;
     const url = form.action;
     const method = document.getElementById('formMethod').value;
+
     const formData = {
         name: document.getElementById('inputName').value,
         brand: document.getElementById('inputBrand').value,
@@ -207,18 +255,15 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData)
     })
     .then(res => res.json())
-    .then(response => {
-        showToast(response.message || 'Saved!');
+    .then(data => {
+        showToast(data.message || 'Saved!');
         closeModal();
         location.reload();
     })
-    .catch(error => {
-        console.error(error);
-        showToast('Failed to save.', true);
-    });
+    .catch(() => showToast('Failed to save.', true));
 });
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
@@ -231,71 +276,38 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function (
         },
         body: JSON.stringify({ _method: 'DELETE' })
     })
-    .then(async res => {
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    })
+    .then(res => res.ok ? res.json() : Promise.reject(res))
     .then(() => location.reload())
-    .catch(err => {
-        console.error(err);
-        showToast("Delete failed.", true);
-    });
+    .catch(() => showToast("Delete failed.", true));
 });
 
-document.getElementById('filterLowStock').addEventListener('click', function () {
-    const button = this;
-    const url = new URL(window.location.href);
-    const params = url.searchParams;
+// Filters
+function toggleFilterMenu() {
+    const menu = document.getElementById('filterMenu');
+    menu.classList.toggle('show');
+}
 
-    const isLowStockActive = params.get('low_stock') === '1';
-    if (isLowStockActive) {
-        params.delete('low_stock');
-        button.innerText = 'Show Low Stock';
-    } else {
-        params.set('low_stock', '1');
-        button.innerText = 'Show All';
-    }
+function applyFilters() {
+    const nameSort = document.getElementById('sortName').value;
+    const expirySort = document.getElementById('sortExpiry').value;
+    const stock = document.getElementById('stockFilter').value;
 
-    const activeCategory = document.querySelector('.category-tab.active, .category-tab.all-active');
-    if (activeCategory) {
-        const cat = new URL(activeCategory.href).searchParams.get('category');
-        if (cat) {
-            params.set('category', cat);
-        } else {
-            params.delete('category');
-        }
-    }
+    const params = new URLSearchParams(window.location.search);
+    nameSort ? params.set('sort_name', nameSort) : params.delete('sort_name');
+    expirySort ? params.set('sort_expiry', expirySort) : params.delete('sort_expiry');
+    stock === 'low' ? params.set('low_stock', '1') : params.delete('low_stock');
 
-    fetch(`?${params.toString()}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(res => res.text())
-    .then(html => {
-        const container = document.getElementById('productContainer');
-        container.innerHTML = html;
+    window.location.href = `?${params.toString()}`;
+}
 
-        const activeTab = document.querySelector('.category-tab.active, .category-tab.all-active');
-        if (activeTab) {
-            activeTab.classList.remove('active', 'all-active');
-            void activeTab.offsetWidth;
-            activeTab.classList.add(activeTab.classList.contains('category-tab') && !params.get('category') ? 'all-active' : 'active');
-        }
-
-        history.replaceState(null, '', `?${params.toString()}`);
-    });
-});
-
+// On load tab + pagination logic
 document.addEventListener('DOMContentLoaded', function () {
-    // ✅ Sync low stock button text with URL
-    const lowStockParam = new URLSearchParams(window.location.search).get('low_stock');
     const lowStockBtn = document.getElementById('filterLowStock');
-    if (lowStockParam === '1') {
-        lowStockBtn.innerText = 'Show All';
-    } else {
-        lowStockBtn.innerText = 'Show Low Stock';
+    const lowStockParam = new URLSearchParams(window.location.search).get('low_stock');
+    if (lowStockBtn) {
+        lowStockBtn.innerText = lowStockParam === '1' ? 'Show All' : 'Show Low Stock';
     }
 
-    // ✅ Repaint "All" tab on load
     const allTab = document.querySelector('.category-tab.all-active');
     if (allTab) {
         allTab.classList.remove('all-active');
@@ -308,8 +320,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (categoryBtn) {
             e.preventDefault();
             const url = new URL(categoryBtn.href);
-            const lowStockActive = document.getElementById('filterLowStock')?.innerText === 'Show All';
-            if (lowStockActive) {
+            if (lowStockBtn?.innerText === 'Show All') {
                 url.searchParams.set('low_stock', '1');
             } else {
                 url.searchParams.delete('low_stock');
@@ -322,20 +333,17 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(html => {
                 const container = document.getElementById('productContainer');
                 container.innerHTML = html;
-                container.classList.remove('slide-up', 'slide-down');
+                container.classList.remove('slide-up');
                 void container.offsetWidth;
                 container.classList.add('slide-up');
 
-                const allTabs = document.querySelectorAll('.category-tab');
-                allTabs.forEach(tab => tab.classList.remove('active', 'all-active'));
-
+                document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active', 'all-active'));
                 if (categoryBtn.innerText.trim().toLowerCase() === 'all') {
                     categoryBtn.classList.add('all-active');
                 } else {
                     categoryBtn.classList.add('active');
                 }
             });
-
             return;
         }
 
@@ -361,6 +369,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+function toggleFilterMenu() {
+    const menu = document.getElementById('filterMenu');
+    menu.classList.toggle('show');
+
+    // Close if clicked outside
+    document.addEventListener('click', function handleClickOutside(event) {
+        if (!menu.contains(event.target) && !event.target.closest('.filter-btn')) {
+            menu.classList.remove('show');
+            document.removeEventListener('click', handleClickOutside);
+        }
+    });
+}
 </script>
 
 

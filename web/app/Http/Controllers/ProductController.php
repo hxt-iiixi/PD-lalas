@@ -7,23 +7,35 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
     {
         $search = $request->query('search');
         $category = $request->query('category');
         $lowStock = $request->query('low_stock');
+        $sortName = $request->query('sort_name');       // asc or desc
+        $sortExpiry = $request->query('sort_expiry');   // asc or desc
 
-        $products = Product::when($search, function ($query, $search) {
+        $products = Product::query()
+            ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('brand', 'like', "%{$search}%");
+                    ->orWhere('brand', 'like', "%{$search}%");
             })
             ->when($category, function ($query, $category) {
                 $query->where('category', $category);
             })
             ->when($lowStock, function ($query) {
-                $query->where('stock', '<', 21)->orderBy('stock', 'asc');
+                $query->where('stock', '<', 21);
             })
-            ->orderBy('created_at', 'desc')
+            ->when($sortName, function ($query, $sortName) {
+                $query->orderBy('name', $sortName);
+            })
+            ->when($sortExpiry, function ($query, $sortExpiry) {
+                $query->orderBy('expiry_date', $sortExpiry);
+            })
+            // Fallback sort if no sort provided
+            ->when(!$sortName && !$sortExpiry, function ($query) {
+                $query->orderBy('created_at', 'desc');
+            })
             ->paginate(15);
 
         if ($request->ajax()) {
@@ -32,6 +44,7 @@ class ProductController extends Controller
 
         return view('inventory.index', compact('products'));
     }
+
 
     public function store(Request $request)
     {

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Sale;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -13,9 +14,10 @@ class DashboardController extends Controller
     {
         $today = Carbon::today();
 
-        $todaySales = Sale::with('product')
-            ->whereDate('created_at', $today)
-            ->get();
+        $todaySales = Sale::whereDate('created_at', now()->toDateString())
+        ->orderBy('created_at', 'desc')
+        ->get();
+
 
         $totalProducts = Product::count();
         $totalProfit = $todaySales->sum('total_price');
@@ -46,4 +48,25 @@ class DashboardController extends Controller
             'lowStock'
         ));
     }
+
+   public function chartData($type)
+    {
+        // ✅ TEMP: Test block for "profit"
+        if ($type === 'profit') {
+    return response()->json([
+        'labels' => ['Jan', 'Feb', 'Mar'],
+        'values' => [100, 200, 150]
+    ]);
+    } elseif ($type === 'sold') {
+        return response()->json([
+            'labels' => ['Jan', 'Feb', 'Mar'],
+            'values' => [90, 20, 15]
+        ]);
+    } 
+
+
+    // fallback (shouldn't be triggered)
+    return response()->json(['labels' => [], 'values' => []]);
+}
+
 }

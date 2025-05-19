@@ -18,3 +18,7 @@ Route::post('/products/{id}/restore', [ProductController::class, 'restore']);
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::post('/sales/store', [SaleController::class, 'store'])->name('sales.store');
+Route::get('/chart-data/{type}', [DashboardController::class, 'chartData']);
+Route::post('/sales/update', [SaleController::class, 'update'])->name('sales.update');
+Route::post('/sales/delete', [SaleController::class, 'destroy'])->name('sales.delete');
+

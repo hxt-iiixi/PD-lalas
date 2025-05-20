@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Products')
 @section('content')
-<link href="https://fonts.googleapis.com/css?family=Lexend" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/products.css') }}">
 
 <div class="top-bar">

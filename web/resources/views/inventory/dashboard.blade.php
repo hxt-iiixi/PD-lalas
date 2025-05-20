@@ -39,64 +39,78 @@
 @endif
 
 <div class="sales-section">
-    <div class="sales-form">
-        <h4>Log a Sale</h4>
-        <form id="logSaleForm">
-            @csrf
-            <label for="product_id">Select Product:</label>
-            <select name="product_id" required>
-                @foreach(App\Models\Product::all() as $product)
-                    <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
-                @endforeach
-            </select>
+    <div class="d-flex gap-3">
+        <div class="log-sale" style="width: 30%;">
+            <div class="sales-form">
+                <h4>Log a Sale</h4>
+                <form id="logSaleForm">
+                    @csrf
 
-            <label for="quantity">Quantity:</label>
-            <input type="number" name="quantity" min="1" required>
+                    <label for="product_id">Select Product:</label>
+                    <select name="product_id" required>
+                        @foreach(App\Models\Product::all() as $product)
+                            <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
+                        @endforeach
+                    </select>
 
-            <button type="submit" class="button-fill green-button">Log Sale</button>
-        </form>
-    </div>
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" name="quantity" min="1" required>
 
-    <div class="sales-log">
-        <h4>Today's Sales Log</h4>
+                    <!-- ✅ Discount Dropdown -->
+                    <label for="discount_type">Discount Type:</label>
+                    <select name="discount_type" id="discount_type" class="form-select">
+                        <option value="none">None</option>
+                        <option value="SC">Senior Citizen (20%)</option>
+                        <option value="PWD">PWD (20%)</option>
+                    </select>
 
-        @if ($todaySales->isEmpty())
-            <p>No sales recorded today.</p>
-        @else
-            <div class="sales-log-table">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Total</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($todaySales as $sale)
-                            <tr>
-                                <td>{{ $sale->created_at->timezone('Asia/Manila')->format('h:i A') }}</td>
-                                <td>{{ $sale->product->name }}</td>
-                                <td>{{ $sale->quantity }}</td>
-                                <td>₱{{ number_format($sale->total_price, 2) }}</td>
-                                <td class="action-cell">
-                                    <div class="dropdown-wrapper">
-                                        <button class="dots-btn" onclick="toggleDropdown(this, event)">⋮</button>
-                                        <div class="dropdown-menu">
-                                            <a href="#" onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name }}', {{ $sale->product_id }}, {{ $sale->quantity }}); return false;">Edit</a>
-                                            <a href="#" onclick="deleteSale({{ $sale->id }}); return false;">Delete</a>
-
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach 
-                    </tbody>
-                </table>
+                    <button type="submit" class="button-fill green-button">Log Sale</button>
+                </form>
             </div>
-        @endif
+        </div>
+        <div class="sales-log" style="width: 70%;">
+            <h4>Today's Sales Log</h4>
+
+            @if ($todaySales->isEmpty())
+                <p>No sales recorded today.</p>
+            @else
+                <div class="sales-log-table">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Discount</th>
+                                <th>Total</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($todaySales as $sale)
+                                <tr>
+                                    <td>{{ $sale->created_at->timezone('Asia/Manila')->format('h:i A') }}</td>
+                                    <td>{{ $sale->product->name }}</td>
+                                    <td>{{ $sale->quantity }}</td>
+                                   <td>{{ $sale->formatted_discount }}</td>
+                                    <td>₱{{ number_format($sale->total_price, 2) }}</td>
+                                    <td class="action-cell">
+                                        <div class="dropdown-wrapper">
+                                            <button class="dots-btn" onclick="toggleDropdown(this, event)">⋮</button>
+                                            <div class="dropdown-menu">
+                                                <a href="#" onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name }}', {{ $sale->product_id }}, {{ $sale->quantity }}); return false;">Edit</a>
+                                                <a href="#" onclick="deleteSale({{ $sale->id }}); return false;">Delete</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 <div class="chart-section" style="margin-top: 40px;">
@@ -271,14 +285,30 @@
                 button.prop('disabled', false).text('Log Sale');
 
                 // Add new row visually
+                // Format discount label
+                let discountLabel = 'None';
+                if (response.discount_type === 'SC') discountLabel = 'Senior Citizen (20%)';
+                else if (response.discount_type === 'PWD') discountLabel = 'PWD (20%)';
+
                 const newRow = `
                     <tr class="highlight-row">
                         <td>${response.time}</td>
                         <td>${response.product}</td>
                         <td>${response.quantity}</td>
+                        <td>${discountLabel}</td>
                         <td>₱${response.total}</td>
+                        <td class="action-cell">
+                            <div class="dropdown-wrapper">
+                                <button class="dots-btn">⋮</button>
+                                <div class="dropdown-menu">
+                                    <a href="#" onclick="openEditModal(${response.id}, '${response.product}', ${response.product_id}, ${response.quantity}); return false;">Edit</a>
+                                    <a href="#" onclick="deleteSale(${response.id}); return false;">Delete</a>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 `;
+
                 $('table.table tbody').prepend(newRow);
                 $('.highlight-row').hide().fadeIn(600).removeClass('highlight-row');
 

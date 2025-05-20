@@ -20,8 +20,9 @@ class DashboardController extends Controller
 
 
         $totalProducts = Product::count();
-        $totalProfit = $todaySales->sum('total_price');
-        $totalSoldQty = $todaySales->sum('quantity');
+        $totalProfit = Sale::sum('total_price'); // ✅ All-time
+        $totalSoldQty = Sale::sum('quantity');
+
 
         $soldDetails = $todaySales
         ->groupBy('product_id')

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Product;
@@ -13,6 +12,7 @@ class SaleController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'discount_type' => 'nullable|string'
         ]);
 
         $product = Product::findOrFail($request->product_id);
@@ -21,30 +21,39 @@ class SaleController extends Controller
             return response()->json(['error' => 'Not enough stock'], 400);
         }
 
-        $totalPrice = $product->selling_price * $request->quantity;
+        $unitPrice = $product->selling_price;
+        $qty = $request->quantity;
 
-        Sale::create([
+        // Normalize discount type
+       $discountType = strtoupper($request->discount_type ?? 'NONE');
+        $discountType = in_array($discountType, ['SC', 'PWD']) ? $discountType : 'NONE';
+        $discountMultiplier = $discountType !== 'NONE' ? 0.8 : 1.0;
+
+        $total = $unitPrice * $qty * $discountMultiplier;
+
+        $sale = Sale::create([
             'product_id' => $product->id,
-            'quantity' => $request->quantity,
-            'total_price' => $totalPrice,
+            'quantity' => $qty,
+            'total_price' => $total,
+            'discount_type' => $discountType,
         ]);
 
-        $product->decrement('stock', $request->quantity);
+        $product->decrement('stock', $qty);
 
         return response()->json([
-            'message' => 'Sale recorded successfully.',
+            'success' => true,
+            'message' => 'Sale logged successfully.',
+            'id' => $sale->id,
+            'product_id' => $product->id,
             'product' => $product->name,
-            'product_id' => $product->id, // ✅ add this
-            'quantity' => $request->quantity,
-            'total' => number_format($totalPrice, 2),
+            'quantity' => $qty,
+            'discount_type' => $discountType,
+            'total' => number_format($total, 2),
             'time' => now()->timezone('Asia/Manila')->format('h:i A'),
-            'updatedStock' => $product->stock, // ✅ add this
-            'updatedTotalProfit' => number_format(
-                Sale::whereDate('created_at', today())->sum('total_price'), 2
-            ),
-            'updatedTotalSold' => Sale::whereDate('created_at', today())->sum('quantity')
+            'updatedStock' => $product->stock,
+            'updatedTotalProfit' => number_format(Sale::sum('total_price'), 2),
+            'updatedTotalSold' => Sale::sum('quantity'),
         ]);
-
     }
 
     public function update(Request $request)
@@ -58,15 +67,12 @@ class SaleController extends Controller
         $sale = Sale::findOrFail($request->sale_id);
         $product = Product::findOrFail($sale->product_id);
 
-        // Restore original quantity to stock
         $product->increment('stock', $request->original_quantity);
 
-        // Check if enough stock for new quantity
         if ($product->stock < $request->quantity) {
             return response()->json(['error' => 'Not enough stock to update.'], 400);
         }
 
-        // Adjust again
         $product->decrement('stock', $request->quantity);
 
         $sale->update([
@@ -82,9 +88,7 @@ class SaleController extends Controller
         $sale = Sale::findOrFail($request->sale_id);
         $product = Product::findOrFail($sale->product_id);
 
-        // Restore the sold quantity to the product stock
         $product->increment('stock', $sale->quantity);
-
         $sale->delete();
 
         return response()->json([
@@ -94,6 +98,30 @@ class SaleController extends Controller
             'product_id' => $product->id,
             'updatedStock' => $product->stock
         ]);
+    }
+    public function history()
+    {
+        $sales = \App\Models\Sale::with('product')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy(function ($sale) {
+                return $sale->created_at->format('Y-m-d');
+            });
+
+        $dailySummary = [];
+
+        foreach ($sales as $date => $daySales) {
+            $totalSold = $daySales->sum('quantity');
+            $totalProfit = $daySales->sum('total_price');
+            $dailySummary[] = [
+                'date' => $date,
+                'totalSold' => $totalSold,
+                'totalProfit' => $totalProfit,
+                'sales' => $daySales,
+            ];
+        }
+
+        return view('sales.history', compact('dailySummary'));
     }
 
 }

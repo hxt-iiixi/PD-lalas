@@ -1,5 +1,5 @@
 body {
-    font-family: 'Lexend';
+    font-family: 'Rubik', sans-serif;
 }
 
 .top-bar {
@@ -429,4 +429,34 @@ table td:last-child {
     font-weight: bold;
     color: #28a745;
     background-color: #e9fcef;
+}
+
+.history-card {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    font-weight: 500;
+}
+
+.details-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.details-table th,
+.details-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
 }

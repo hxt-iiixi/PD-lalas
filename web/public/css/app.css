@@ -3,7 +3,7 @@
 body {
     margin: 0;
     font-family: 'Rubik', sans-serif;
-    background-color: #e14949;
+    background-color: #fdfaf6;
 }
 
 .layout {
@@ -18,9 +18,9 @@ body {
     height: 100vh;
     width: 220px;
     padding: 25px 15px;
-    background-color: #dfeaf5; /* soft shade of white */
+    background-color: #eeedec;
     color: #333;
-    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.04);
     border-radius: 0 20px 20px 0;
     z-index: 10;
     overflow-y: auto;
@@ -38,6 +38,7 @@ body {
     letter-spacing: 1px;
 }
 
+/* Nav */
 .sidebar ul {
     list-style: none;
     padding: 0;
@@ -56,22 +57,16 @@ body {
     border-radius: 999px;
     font-weight: 500;
     text-decoration: none;
-    transition: all 0.4s ease;
     font-size: 15px;
     position: relative;
     overflow: hidden;
     background-color: transparent;
+    color: #333; /* neutral text color */
+    transition: all 0.3s ease;
     z-index: 1;
 }
 
-/* ========== Font color base (unhovered) ========== */
-.nav-link.dashboard { color: #003399; }
-.nav-link.inventory { color: #d63384; }
-.nav-link.sales     { color: #cc9900; }
-.nav-link.profile   { color: #5b72f2; }
-.nav-link.logout    { color: #ff3333; }
-
-/* ========== Fill animation on hover/active ========== */
+/* Shared hover/active fill */
 .sidebar .nav-link::before {
     content: '';
     position: absolute;
@@ -80,43 +75,32 @@ body {
     height: 100%;
     width: 0%;
     z-index: -1;
-    transition: width 0.4s ease;
+    transition: width 0.3s ease;
     border-radius: 999px;
+    background-color: #8b5e3c; /* unified accent */
 }
 
-/* Set hover fill background color */
-.nav-link.dashboard::before { background-color: #003399; }
-.nav-link.inventory::before { background-color: #d63384; }
-.nav-link.sales::before     { background-color: #cc9900; }
-.nav-link.profile::before   { background-color: #5b72f2; }
-.nav-link.logout::before    { background-color: #ff3333; }
-
-/* Hover state — fill expands */
-.sidebar .nav-link:hover::before {
-    width: 100%;
-}
-.sidebar .nav-link:hover {
-    color: white !important;
-}
-
-/* Active state — same as hover */
-.sidebar .nav-link.active {
-    color: white !important;
-}
+.sidebar .nav-link:hover::before,
 .sidebar .nav-link.active::before {
     width: 100%;
 }
 
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    color: #fff !important;
+}
+
+
 .sidebar-footer {
     margin-top: auto;
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .sidebar .contact-info {
     font-size: 14px;
     font-weight: 500;
-    color: #ffebf2;
+    color: #7a5d4c;
     text-align: center;
 }
 
@@ -166,9 +150,28 @@ body {
 .content {
     flex: 1;
     padding: 30px;
-    background-color: #dae9f7;
+    background-color: #fdfaf6;
     box-sizing: border-box;
 }
+
+/* Section Cards */
+.page-section {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    margin-bottom: 30px;
+}
+
+.page-section h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-left: 10px;
+    border-left: 4px solid #8b5e3c;
+    color: #8b5e3c;
+}
+
 
 /* Mobile */
 @media (max-width: 768px) {

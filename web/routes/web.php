@@ -31,4 +31,6 @@ Route::get('/chart-data/{type}', [DashboardController::class, 'chartData']);
 Route::post('/sales/update', [SaleController::class, 'update'])->name('sales.update');
 Route::post('/sales/delete', [SaleController::class, 'destroy'])->name('sales.delete');
 Route::get('/inventory/history', [InventoryController::class, 'history'])->name('inventory.history');
+Route::post('/sales/reset', [SaleController::class, 'reset'])->name('sales.reset');
+Route::post('/sales/undo', [SaleController::class, 'undo'])->name('sales.undo');
 

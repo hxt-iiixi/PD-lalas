@@ -37,6 +37,7 @@
 @if(session('error'))
     <div class="alert alert-danger">{{ session('error') }}</div>
 @endif
+<button onclick="resetAllSales()" class="button-fill delete-button" style="margin: 16px 0;">Reset All Sales</button>
 
 <div class="sales-section">
     <div class="d-flex gap-3">
@@ -74,7 +75,7 @@
             @if ($todaySales->isEmpty())
                 <p>No sales recorded today.</p>
             @else
-                <div class="sales-log-table">
+               <div class="sales-log-table">
                     <table class="table">
                         <thead>
                             <tr>
@@ -87,25 +88,24 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($todaySales as $sale)
+                            @forelse($todaySales as $sale)
                                 <tr>
                                     <td>{{ $sale->created_at->timezone('Asia/Manila')->format('h:i A') }}</td>
                                     <td>{{ $sale->product->name }}</td>
                                     <td>{{ $sale->quantity }}</td>
-                                   <td>{{ $sale->formatted_discount }}</td>
+                                    <td>{{ $sale->formatted_discount }}</td>
                                     <td>₱{{ number_format($sale->total_price, 2) }}</td>
                                     <td class="action-cell">
-                                        <div class="dropdown-wrapper">
-                                            <button class="dots-btn" onclick="toggleDropdown(this, event)">⋮</button>
-                                            <div class="dropdown-menu">
-                                                <a href="#" onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name }}', {{ $sale->product_id }}, {{ $sale->quantity }}); return false;">Edit</a>
-                                                <a href="#" onclick="deleteSale({{ $sale->id }}); return false;">Delete</a>
-                                            </div>
-                                        </div>
+                                        <button class="dots-btn"
+                                            onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name }}', {{ $sale->product_id }}, {{ $sale->quantity }})"
+                                        >⋮</button>
                                     </td>
                                 </tr>
-                            @endforeach
-
+                            @empty
+                                <tr id="noSalesRow">
+                                    <td colspan="6" style="text-align: center;">No sales recorded today.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -217,21 +217,24 @@
                    style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1;">
         </div>
 
-        <button type="submit" class="button-fill green-button" style="margin-top: 10px;">
-            Update Sale
-        </button>
+        <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;">
+            <button type="submit" class="button-fill green-button">Update Sale</button>
+            <button type="button" class="button-fill delete-button" onclick="openDeleteConfirmModal()">Delete</button>
+        </div>
+
     </form>
   </div>
 </div>
+
 <!-- Delete Confirmation Modal -->
 <div id="deleteConfirmModal" class="modal">
   <div class="modal-content" style="max-width: 400px;">
     <span class="close" onclick="$('#deleteConfirmModal').hide()">&times;</span>
     <h3>Confirm Deletion</h3>
-    <p>Are you sure you want to delete this sale?</p>
-    <div class="modal-actions">
+    <p>Are you sure you want to delete the sale of <strong id="confirmProductName">this product</strong>?</p>
+    <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
       <button class="button-fill cancel-button" onclick="$('#deleteConfirmModal').hide()">Cancel</button>
-      <button class="button-fill delete-button" id="confirmDeleteBtn">Delete</button>
+      <button class="button-fill delete-button" onclick="confirmDeleteFromModal()">Delete</button>
     </div>
   </div>
 </div>
@@ -239,9 +242,128 @@
 
 
 
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+
+let selectedSaleId = null;
+
+function openEditModal(id, name, productId, quantity) {
+    selectedSaleId = id;
+    $('#editSaleId').val(id);
+    $('#editOriginalQty').val(quantity);
+    $('#editProductName').val(name);
+    $('#editQuantity').val(quantity);
+    $('#confirmProductName').text(name); // <-- insert product name in confirm modal
+    $('#editSaleModal').show();
+}
+
+function openDeleteConfirmModal() {
+    $('#editSaleModal').hide(); // hide edit modal first
+    $('#deleteConfirmModal').show(); // show themed confirm modal
+}
+
+function confirmDeleteFromModal() {
+    if (!selectedSaleId) return;
+
+    $.ajax({
+        url: "{{ route('sales.delete') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            sale_id: selectedSaleId
+        },
+        success: function (res) {
+            if (res.success) {
+                // Store undo reference
+                localStorage.setItem('lastDeletedSaleId', selectedSaleId);
+                localStorage.setItem('toastMessage', `
+                    ${res.message}
+                    <button class="undo-button" onclick="undoDelete(${selectedSaleId})">Undo</button>
+                `);
+                localStorage.setItem('toastColor', 'red');
+                location.reload();
+            }
+        },
+        error: function () {
+            alert("Failed to delete sale.");
+        }
+    });
+
+    $('#deleteConfirmModal').hide();
+}
+
+
+
+
+
+$('#confirmDeleteBtn').on('click', function () {
+    $.ajax({
+        url: "{{ route('sales.delete') }}",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            sale_id: $('#editSaleId').val()
+        },
+        success: function (res) {
+            if (res.success) {
+                localStorage.setItem('toastMessage', res.message);
+                localStorage.setItem('toastColor', 'red');
+                location.reload(); // refresh to update UI
+            }
+            $('#deleteConfirmModal').hide();
+        },
+        error: function () {
+            alert("Failed to delete sale.");
+        }
+    });
+});
+
+    function resetAllSales() {
+        if (!confirm('Are you sure you want to delete all sales?')) return;
+
+        $.post("{{ route('sales.reset') }}", {
+            _token: "{{ csrf_token() }}"
+        }).done(function(res) {
+            if (res.success) {
+                // Visually clear the UI
+                $('#total-profit').text('₱0.00');
+                $('#total-sold').text('0');
+                $('table.table tbody').empty().append(`
+                    <tr>
+                        <td colspan="6" style="text-align: center;">No sales recorded today.</td>
+                    </tr>
+                `);
+                showToast(res.message, 'red');
+            }
+        }).fail(() => {
+            alert('Failed to reset sales.');
+        });
+    }
+    function undoDelete(saleId) {
+        $.ajax({
+            url: "{{ route('sales.undo') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                sale_id: saleId
+            },
+            success: function (res) {
+                if (res.success) {
+                    localStorage.setItem('toastMessage', res.message);
+                    localStorage.setItem('toastColor', 'green');
+                    location.reload();
+                }
+            },
+            error: function () {
+                alert("Failed to undo the sale.");
+            }
+        });
+    }
+
+
+
     // Modal functions
     function openSoldModal() {
         document.getElementById('soldModal').style.display = 'block';
@@ -269,73 +391,79 @@
     };
 
     // AJAX submit handler
-    $('#logSaleForm').on('submit', function(e) {
-        e.preventDefault();
+    let saleCount = {{ $todaySales->count() }};
 
-        const form = $(this);
-        const button = form.find('button');
-        button.prop('disabled', true).text('Logging...');
+$('#logSaleForm').on('submit', function(e) {
+    e.preventDefault();
 
-        $.ajax({
-            url: "{{ route('sales.store') }}",
-            method: "POST",
-            data: form.serialize(),
-            success: function(response) {
-                form[0].reset();
-                button.prop('disabled', false).text('Log Sale');
+    const form = $(this);
+    const button = form.find('button');
+    button.prop('disabled', true).text('Logging...');
 
-                // Add new row visually
-                // Format discount label
-                let discountLabel = 'None';
-                if (response.discount_type === 'SC') discountLabel = 'Senior Citizen (20%)';
-                else if (response.discount_type === 'PWD') discountLabel = 'PWD (20%)';
+    $.ajax({
+        url: "{{ route('sales.store') }}",
+        method: "POST",
+        data: form.serialize(),
+        success: function(response) {
+            form[0].reset();
+            button.prop('disabled', false).text('Log Sale');
 
-                const newRow = `
-                    <tr class="highlight-row">
-                        <td>${response.time}</td>
-                        <td>${response.product}</td>
-                        <td>${response.quantity}</td>
-                        <td>${discountLabel}</td>
-                        <td>₱${response.total}</td>
-                        <td class="action-cell">
-                            <div class="dropdown-wrapper">
-                                <button class="dots-btn">⋮</button>
-                                <div class="dropdown-menu">
-                                    <a href="#" onclick="openEditModal(${response.id}, '${response.product}', ${response.product_id}, ${response.quantity}); return false;">Edit</a>
-                                    <a href="#" onclick="deleteSale(${response.id}); return false;">Delete</a>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-
-                $('table.table tbody').prepend(newRow);
-                $('.highlight-row').hide().fadeIn(600).removeClass('highlight-row');
-
-                // 🔁 Update total stats
-                $('#total-profit').text('₱' + response.updatedTotalProfit);
-                $('#total-sold').text(response.updatedTotalSold);
-
-                // 🔁 Update stock in dropdown
-                const updatedOption = $(`#logSaleForm select[name="product_id"] option[value="${response.product_id}"]`);
-                if (updatedOption.length) {
-                    updatedOption.text(`${response.product} (Stock: ${response.updatedStock})`);
-                }
-
-                // ✅ Show toast
-                const toast = $('#toast');
-                toast.text(response.message).css('display', 'block').addClass('show');
-                setTimeout(() => {
-                    toast.removeClass('show');
-                    setTimeout(() => toast.css('display', 'none'), 400);
-                }, 3000);
-            },
-            error: function(err) {
-                button.prop('disabled', false).text('Log Sale');
-                alert('Error logging sale. Please check stock or try again.');
+            if (saleCount === 0) {
+                // 🟢 First sale today → Reload
+                location.reload();
+                return;
             }
-        });
+
+            saleCount++; // increment for next calls
+
+            // Build and prepend new row
+            let discountLabel = 'None';
+            if (response.discount_type === 'SC') discountLabel = 'Senior Citizen (20%)';
+            else if (response.discount_type === 'PWD') discountLabel = 'PWD (20%)';
+
+            const newRow = `
+                <tr class="highlight-row">
+                    <td>${response.time}</td>
+                    <td>${response.product}</td>
+                    <td>${response.quantity}</td>
+                    <td>${discountLabel}</td>
+                    <td>₱${response.total}</td>
+                    <td class="action-cell">
+                        <button class="dots-btn"
+                            onclick="openEditModal(${response.id}, '${response.product}', ${response.product_id}, ${response.quantity})"
+                        >⋮</button>
+                    </td>
+                </tr>
+            `;
+
+            $('table.table tbody').prepend(newRow);
+            $('.highlight-row').hide().fadeIn(600).removeClass('highlight-row');
+
+            // Update totals
+            $('#total-profit').text('₱' + response.updatedTotalProfit);
+            $('#total-sold').text(response.updatedTotalSold);
+
+            // Update stock in dropdown
+            const updatedOption = $(`#logSaleForm select[name="product_id"] option[value="${response.product_id}"]`);
+            if (updatedOption.length) {
+                updatedOption.text(`${response.product} (Stock: ${response.updatedStock})`);
+            }
+
+            // Toast
+            const toast = $('#toast');
+            toast.html(response.message).css('display', 'block').addClass('show');
+            setTimeout(() => {
+                toast.removeClass('show');
+                setTimeout(() => toast.css('display', 'none'), 400);
+            }, 3000);
+        },
+        error: function(err) {
+            button.prop('disabled', false).text('Log Sale');
+            alert('Error logging sale. Please check stock or try again.');
+        }
     });
+});
+
 </script>
 
 <script>
@@ -437,99 +565,14 @@ $('#editSaleForm').on('submit', function (e) {
 });
 
 </script>
-
-<script>
-let selectedSaleId = null;
-function toggleDropdown(button, event) {
-    event.stopPropagation(); // Prevent from bubbling to window
-
-    const menu = $(button).siblings('.dropdown-menu');
-
-    if (menu.hasClass('open')) {
-        // Close current menu
-        menu.slideUp(150, function () {
-            menu.removeClass('open');
-        });
-    } else {
-        // Close any other open menus first
-        $('.dropdown-menu.open').slideUp(150).removeClass('open');
-
-        // Open current menu
-        menu.slideDown(150, function () {
-            menu.addClass('open');
-        });
-    }
-}
-
-
-
-
-
-$(document).on('click', function (e) {
-    if (!$(e.target).closest('.dropdown-wrapper').length) {
-        $('.dropdown-menu.open').slideUp(150).removeClass('open');
-    }
-
-    // Close modals if background clicked
-    ['#soldModal', '#stockModal', '#editSaleModal', '#deleteConfirmModal'].forEach(id => {
-        const modal = document.querySelector(id);
-        if (modal && e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-});
-
-
-
-// Hook for opening modal
-function openEditModal(id, name, productId, quantity) {
-    $('#editSaleId').val(id);
-    $('#editOriginalQty').val(quantity);
-    $('#editProductName').val(name);
-    $('#editQuantity').val(quantity);
-    $('#editSaleModal').show();
-}
-
-// (Optional) deleteSale placeholder
-function deleteSale(saleId) {
-    selectedSaleId = saleId;
-    $('#deleteConfirmModal').show();
-}
-
-$('#confirmDeleteBtn').on('click', function () {
-    $.ajax({
-        url: "{{ route('sales.delete') }}",
-        method: "POST",
-        data: {
-            _token: "{{ csrf_token() }}",
-            sale_id: selectedSaleId
-        },
-        success: function (res) {
-            if (res.success) {
-                // Store toast for reload
-                localStorage.setItem('toastMessage', res.message);
-                localStorage.setItem('toastColor', 'red');
-
-                location.reload(); // ⬅️ Will trigger toast on next load
-            }
-            $('#deleteConfirmModal').hide();
-        },
-        error: function () {
-            alert("Failed to delete sale.");
-        }
-    });
-});
-
-
-</script>
 <script>
 function showToast(message, color = 'green') {
     const toast = $('#toast');
-    toast.text(message);
+    toast.html(message); // ✅ render as HTML
 
     toast.css({
         display: 'block',
-        backgroundColor: color === 'green' ? '#4ade80' : '#f87171', // green/red
+        backgroundColor: color === 'green' ? '#4ade80' : '#f87171',
         color: '#1e293b'
     }).addClass('show');
 
@@ -547,12 +590,11 @@ $(document).ready(function () {
 
     if (msg) {
         showToast(msg, color || 'green');
-
-        // Clear it after showing
         localStorage.removeItem('toastMessage');
         localStorage.removeItem('toastColor');
     }
 });
+
 </script>
 
 

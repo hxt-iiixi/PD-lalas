@@ -20,8 +20,10 @@ class DashboardController extends Controller
 
 
         $totalProducts = Product::count();
-        $totalProfit = Sale::sum('total_price'); // ✅ All-time
-        $totalSoldQty = Sale::sum('quantity');
+        $today = now()->startOfDay();
+
+        $totalProfit = Sale::where('created_at', '>=', $today)->sum('total_price');
+        $totalSoldQty = Sale::where('created_at', '>=', $today)->sum('quantity');
 
 
         $soldDetails = $todaySales

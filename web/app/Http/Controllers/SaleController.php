@@ -88,7 +88,12 @@ class SaleController extends Controller
         $sale = Sale::findOrFail($request->sale_id);
         $product = Product::findOrFail($sale->product_id);
 
+        // Increment stock
         $product->increment('stock', $sale->quantity);
+
+        // Store sale in session before deletion
+        session(['last_deleted_sale' => $sale->toArray()]);
+
         $sale->delete();
 
         return response()->json([
@@ -99,6 +104,7 @@ class SaleController extends Controller
             'updatedStock' => $product->stock
         ]);
     }
+
     public function history()
     {
         $sales = \App\Models\Sale::with('product')
@@ -123,5 +129,43 @@ class SaleController extends Controller
 
         return view('sales.history', compact('dailySummary'));
     }
+
+    public function reset()
+    {
+        \App\Models\Sale::truncate(); // Permanently deletes all sales
+        return response()->json(['success' => true, 'message' => 'All sales have been reset.']);
+    }
+
+    public function undo(Request $request)
+    {
+        $lastDeleted = session('last_deleted_sale');
+
+        if (!$lastDeleted || $lastDeleted['id'] != $request->sale_id) {
+            return response()->json(['success' => false, 'message' => 'No sale to restore.']);
+        }
+
+        $sale = new Sale();
+        $sale->product_id = $lastDeleted['product_id'];
+        $sale->quantity = $lastDeleted['quantity'];
+        $sale->discount_type = $lastDeleted['discount_type'];
+        $sale->total_price = $lastDeleted['total_price'];
+        $sale->created_at = now();
+        $sale->updated_at = now();
+        $sale->save();
+
+
+        // Restore stock
+        $product = Product::find($sale->product_id);
+        $product->stock -= $sale->quantity;
+        $product->save();
+
+        session()->forget('last_deleted_sale');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sale restored successfully.'
+        ]);
+    }
+
 
 }

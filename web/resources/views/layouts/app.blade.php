@@ -23,14 +23,14 @@
                 <img src="{{ asset('images/lalas-logo.jpg') }}" alt="Lalas Pharmacy Logo" class="img-fluid" style="max-height: 80px;">
             </div>
             <ul class="nav flex-column">
-                <li><a href="{{ route('dashboard') }}" class="nav-link dashboard {{ request()->routeIs('dashboard') ? 'active' : '' }}">🏠 Dashboard</a></li>
-                <li><a href="{{ route('products.index') }}" class="nav-link inventory {{ request()->routeIs('products.index') ? 'active' : '' }}">💊 Inventory</a></li>
-                <li><a href="{{ route('inventory.history') }}" class="nav-link sales {{ request()->routeIs('inventory.history') ? 'active' : '' }}">📈 Sales History</a></li>
-                <li><a href="#" class="nav-link profile">👤 Profile</a></li>
+                <li><a href="{{ route('dashboard') }}" class="nav-link dashboard {{ request()->routeIs('dashboard') ? 'active' : '' }}"> Dashboard</a></li>
+                <li><a href="{{ route('products.index') }}" class="nav-link inventory {{ request()->routeIs('products.index') ? 'active' : '' }}"> Inventory</a></li>
+                <li><a href="{{ route('inventory.history') }}" class="nav-link sales {{ request()->routeIs('inventory.history') ? 'active' : '' }}"> Sales History</a></li>
+                <li><a href="#" class="nav-link profile"> Profile</a></li>
                 <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="nav-link logout btn btn-link p-0 m-0 text-start w-100">🚪 Logout</button>
+                        <button type="submit" class="nav-link logout btn btn-link p-0 m-0 text-start w-100"> Logout</button>
                     </form>
                 </li>
             </ul>

@@ -11,6 +11,7 @@
 
 </head>
 <body>
+    
     <!-- Hamburger Button (move outside layout for proper absolute positioning) -->
 <button id="hamburgerBtn" class="hamburger">&#9776;</button>
 
@@ -26,7 +27,12 @@
                 <li><a href="{{ route('dashboard') }}" class="nav-link dashboard {{ request()->routeIs('dashboard') ? 'active' : '' }}"> Dashboard</a></li>
                 <li><a href="{{ route('products.index') }}" class="nav-link inventory {{ request()->routeIs('products.index') ? 'active' : '' }}"> Inventory</a></li>
                 <li><a href="{{ route('inventory.history') }}" class="nav-link sales {{ request()->routeIs('inventory.history') ? 'active' : '' }}"> Sales History</a></li>
-                <li><a href="#" class="nav-link profile"> Profile</a></li>
+                <li>
+                    <a href="{{ route('profile.custom') }}" class="nav-link {{ request()->routeIs('profile.custom') ? 'active' : '' }}">
+                        Profile
+                    </a>
+                </li>
+
                 <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -43,7 +49,29 @@
 
         <!-- Main Content -->
         <main class="content">
+            <div class="top-header">
+                <div class="left">
+                    <a href="{{ route('dashboard') }}" class="app-name">
+                        <img src="{{ asset('images/lalas-logo.jpg') }}" alt="Logo" class="logo">
+                        <span>PD LALAS Pharmacy</span>
+                    </a>
+                </div>
+                <div class="right">
+                    <div class="profile-dropdown" onclick="toggleDropdown()">
+                        <span class="user-name">{{ Auth::user()->name }}</span>
+                    </div>
+                    <div id="dropdownMenu" class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ route('profile.custom') }}">Edit Profile</a>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit">Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             @yield('content')
+
         </main>
     </div>
 
@@ -65,6 +93,22 @@
 
     hamburger.addEventListener('click', openSidebar);
 </script>
+<script>
+    function toggleDropdown() {
+        const menu = document.getElementById('dropdownMenu');
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+
+    // Optional: close on outside click
+    window.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('dropdownMenu');
+        const trigger = document.querySelector('.profile-dropdown');
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+</script>
 
 </body>
+
 </html>

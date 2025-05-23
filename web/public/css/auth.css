@@ -1,21 +1,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap');
-
-body {
-    font-family: 'Rubik', sans-serif;
-    background-color: #fdfaf6;
+* {
+    box-sizing: border-box;
+}
+.auth-body {
     margin: 0;
     padding: 0;
+    height: 100vh;
+    background-image: url('/images/auth-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Rubik', sans-serif;
 }
 
-/* Container */
+/* blur effect on its own layer */
+.blur-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    backdrop-filter: blur(6px);
+    background-color: rgba(255, 255, 255, 0.2); /* soft tint (optional) */
+    z-index: 0;
+}
+
+.auth-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+
 .auth-container {
-    max-width: 420px;
-    margin: 60px auto;
-    background: #ffffff;
+    background: white;
     padding: 32px;
     border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    z-index: 2;
 }
+
 
 .auth-container h1 {
     font-size: 24px;
@@ -71,6 +98,7 @@ body {
 /* Footer link */
 .form-footer {
     margin-top: 16px;
+    margin-bottom: 16px;
     text-align: center;
 }
 
@@ -114,12 +142,18 @@ body {
 }
 .show-pass-btn {
     position: absolute;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
-    background: none;
+    top: 38px;
+    right: 14px;
     border: none;
+    background: transparent;
     color: #3b82f6;
     font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
+    padding: 0;
 }
+
+.show-pass-btn:hover {
+    text-decoration: underline;
+}
+

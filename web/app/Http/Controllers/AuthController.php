@@ -13,16 +13,20 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
+            $user = Auth::user(); // Fetch the logged-in user
+            $user->is_active = true;
+            $user->save(); // Explicitly save the change
+
             return redirect()->route('dashboard');
         }
 
         return redirect()->back()->with('error', 'Invalid credentials.');
     }
-
     public function showRegister() {
         return view('auth.register');
     }
@@ -43,10 +47,17 @@ class AuthController extends Controller
         return redirect()->route('login')->with('success', 'Account created successfully. Please login.');
     }
 
-    public function logout(Request $request) {
+   // LOGOUT
+   public function logout(Request $request)
+    {
+        $user = Auth::user();
+        $user->is_active = false;
+        $user->save(); // Add this if missing
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

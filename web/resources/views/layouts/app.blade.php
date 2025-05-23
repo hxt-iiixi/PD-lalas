@@ -32,7 +32,15 @@
                         Profile
                     </a>
                 </li>
-
+                @auth
+                    @if(Auth::user()->is_admin)
+                        <li>
+                            <a href="{{ route('admin.accounts') }}" class="nav-link {{ request()->routeIs('admin.accounts') ? 'active' : '' }}">
+                                Accounts
+                            </a>
+                        </li>
+                    @endif
+                @endauth
                 <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

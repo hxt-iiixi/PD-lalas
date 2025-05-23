@@ -10,6 +10,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\AccountsController;
 // Redirect root
 Route::get('/', function () {
     return redirect()->route('products.index');
@@ -58,3 +59,28 @@ Route::post('/forgot-password/send-otp', [ForgotPasswordController::class, 'send
 Route::get('/verify-otp', [ForgotPasswordController::class, 'showVerifyForm'])->name('password.verify');
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP'])->name('password.verifyOtp');
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.reset');
+
+
+Route::middleware(['auth', 'is.admin'])->group(function () {
+    Route::get('/accounts', [AccountsController::class, 'index'])->name('accounts.index');
+    Route::delete('/accounts/{user}', [AccountsController::class, 'destroy'])->name('accounts.destroy');
+
+    Route::get('/products', [ProductController::class, 'index'])->name('products.index'); // inventory
+});
+Route::middleware(['auth', 'is.admin'])->group(function () {
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('/accounts', [AccountsController::class, 'index'])->name('accounts.index');
+});
+// Guest access
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+});
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::middleware(['auth', 'is.admin'])->group(function () {
+    Route::get('/admin/accounts', [AccountsController::class, 'index'])->name('admin.accounts');
+    Route::delete('/admin/accounts/{user}', [AccountsController::class, 'destroy'])->name('admin.accounts.delete');
+});

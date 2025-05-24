@@ -17,16 +17,33 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
+        // Check user by email first
+        $user = \App\Models\User::where('email', $credentials['email'])->first();
+
+        if ($user && !$user->is_approved) {
+            return redirect()->back()->with('error', 'Your account is still pending approval.');
+        }
+
         if (Auth::attempt($credentials)) {
-            $user = Auth::user(); // Fetch the logged-in user
+            $user = Auth::user();
+
+            // Ensure the user is approved
+            if (!$user->is_approved) {
+                Auth::logout();
+                return redirect()->route('login')->with('error', 'Your account is still pending approval.');
+            }
+
             $user->is_active = true;
-            $user->save(); // Explicitly save the change
+            $user->save(); // <== THIS MUST EXIST
 
             return redirect()->route('dashboard');
         }
 
+
         return redirect()->back()->with('error', 'Invalid credentials.');
     }
+
+
     public function showRegister() {
         return view('auth.register');
     }
@@ -42,7 +59,10 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_active' => false,
+            'is_approved' => false, // Mark as pending approval
         ]);
+
 
         return redirect()->route('login')->with('success', 'Account created successfully. Please login.');
     }

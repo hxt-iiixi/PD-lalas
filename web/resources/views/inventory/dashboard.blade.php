@@ -40,7 +40,7 @@
 <button onclick="resetAllSales()" class="button-fill delete-button" style="margin: 16px 0;">Reset All Sales</button>
 
 <div class="sales-section">
-    <div class="d-flex gap-3">
+    <div class="sales-grid">
         <div class="log-sale" style="width: 30%;">
             <div class="sales-form">
                 <h4>Log a Sale</h4>
@@ -75,7 +75,7 @@
             @if ($todaySales->isEmpty())
                 <p>No sales recorded today.</p>
             @else
-               <div class="sales-log-table">
+               <div class="sales-log-table-scroll">
                     <table class="table">
                         <thead>
                             <tr>

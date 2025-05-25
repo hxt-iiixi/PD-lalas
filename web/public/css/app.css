@@ -130,8 +130,9 @@ body {
 
 .layout {
     display: flex;
+    flex-direction: row; /* make it responsive */
     min-height: 100vh;
-    align-items: flex-start;
+    align-items: stretch;
 }
 
 .sidebar {
@@ -270,11 +271,12 @@ body {
 
 /* Main content area */
 .content {
-    flex: 1;
-    padding: 30px;
-    background-color: #fdfaf6;
+    width: 100%;
+    padding: 20px;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
+
 
 /* Section Cards */
 .page-section {
@@ -297,12 +299,16 @@ body {
 
 /* Mobile */
 @media (max-width: 768px) {
+    .layout {
+        flex-direction: column; /* stack sidebar and content */
+    }
     .sidebar {
         position: fixed;
         top: 0;
         left: -220px;
         height: 100%;
-        background: #2b7a78;
+         background-color: #eeedec;
+        color: #333;
         transition: left 0.3s ease;
         z-index: 1003;
     }

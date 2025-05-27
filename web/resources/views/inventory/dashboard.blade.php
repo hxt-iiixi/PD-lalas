@@ -91,13 +91,13 @@
                             @forelse($todaySales as $sale)
                                 <tr>
                                     <td>{{ $sale->created_at->timezone('Asia/Manila')->format('h:i A') }}</td>
-                                    <td>{{ $sale->product->name }}</td>
+                                    <td>{{ $sale->product->name ?? 'Deleted Product' }}</td>
                                     <td>{{ $sale->quantity }}</td>
                                     <td>{{ $sale->formatted_discount }}</td>
                                     <td>₱{{ number_format($sale->total_price, 2) }}</td>
                                     <td class="action-cell">
                                         <button class="dots-btn"
-                                            onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name }}', {{ $sale->product_id }}, {{ $sale->quantity }})"
+                                            onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name ?? 'Deleted' }}', {{ $sale->product_id }}, {{ $sale->quantity }})"
                                         >⋮</button>
                                     </td>
                                 </tr>
@@ -138,22 +138,23 @@
       <div class="modal-column">
         <h4>Medicines</h4>
         <ul>
-          @forelse($soldDetails->filter(fn($item) => $item->product->category === 'medicine') as $item)
-            <li>{{ $item->product->name }} – {{ $item->total_quantity }} pcs</li>
-          @empty
+         @forelse($soldDetails->filter(fn($item) => $item->product && $item->product->category === 'medicine') as $item)
+            <li>{{ $item->product->name ?? 'Deleted Product' }} – {{ $item->total_quantity }} pcs</li>
+        @empty
             <li>No medicines sold.</li>
-          @endforelse
+        @endforelse
+
         </ul>
       </div>
       <div class="modal-column">
         <h4>Supplies</h4>
         <ul>
-          @forelse($soldDetails->filter(fn($item) => $item->product->category === 'supplies') as $item)
-            <li>{{ $item->product->name }} – {{ $item->total_quantity }} pcs</li>
-          @empty
+       @forelse($soldDetails->filter(fn($item) => $item->product && $item->product->category === 'supplies') as $item)
+            <li>{{ $item->product->name ?? 'Deleted Product' }} – {{ $item->total_quantity }} pcs</li>
+        @empty
             <li>No supplies sold.</li>
-          @endforelse
-        </ul>
+        @endforelse
+
       </div>
     </div>
   </div>

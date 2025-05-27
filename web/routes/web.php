@@ -87,3 +87,4 @@ Route::middleware(['auth', 'is.admin'])->group(function () {
 Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'approve'])->name('admin.accounts.approve')->middleware('is.admin');
 Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'approve'])->name('admin.accounts.approve');
 Route::delete('/admin/accounts/reject/{user}', [AccountsController::class, 'reject'])->name('admin.accounts.reject');
+Route::get('/sales/history', [SaleController::class, 'history'])->name('sales.index');

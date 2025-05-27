@@ -105,30 +105,45 @@ class SaleController extends Controller
         ]);
     }
 
-    public function history()
-    {
-        $sales = \App\Models\Sale::with('product')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy(function ($sale) {
-                return $sale->created_at->format('Y-m-d');
-            });
+    public function history(Request $request)
+{
+    $query = Sale::with('product');
 
-        $dailySummary = [];
+    $date = $request->input('date');
 
-        foreach ($sales as $date => $daySales) {
-            $totalSold = $daySales->sum('quantity');
-            $totalProfit = $daySales->sum('total_price');
-            $dailySummary[] = [
-                'date' => $date,
-                'totalSold' => $totalSold,
-                'totalProfit' => $totalProfit,
-                'sales' => $daySales,
-            ];
+    // Fix manually typed d/m/Y format if needed
+    if ($date && str_contains($date, '/')) {
+        try {
+            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $date)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $date = null;
         }
-
-        return view('sales.history', compact('dailySummary'));
     }
+
+    if ($date) {
+        $query->whereDate('created_at', $date);
+    }
+
+    $sales = $query->orderBy('created_at', 'desc')->get()
+        ->groupBy(fn($sale) => $sale->created_at->format('Y-m-d'));
+
+    $dailySummary = [];
+
+    foreach ($sales as $date => $daySales) {
+        $totalSold = $daySales->sum('quantity');
+        $totalProfit = $daySales->sum(fn($s) => $s->total_price);
+        $dailySummary[] = [
+            'date' => $date,
+            'totalSold' => $totalSold,
+            'totalProfit' => $totalProfit,
+            'sales' => $daySales,
+        ];
+    }
+
+    return view('inventory.history', compact('dailySummary'));
+
+}
+
 
     public function reset()
     {

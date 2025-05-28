@@ -1,13 +1,9 @@
 services:
   - type: web
     name: pharmacy-app
-    runtime: php
-    buildCommand: |
-      composer install
-      php artisan key:generate
-      php artisan migrate --force
-    startCommand: php -S 0.0.0.0:10000 -t public
+    env: docker
     plan: free
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: APP_ENV
         value: production
@@ -22,6 +18,6 @@ services:
       - key: DB_DATABASE
         value: your-db-name
       - key: DB_USERNAME
-        value: your-db-username
+        value: your-db-user
       - key: DB_PASSWORD
         value: your-db-password

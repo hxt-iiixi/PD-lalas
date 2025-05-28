@@ -1,12 +1,24 @@
 services:
   - type: web
     name: pharmacy-app
-    runtime: php
+    env: docker
+    plan: free
     buildCommand: "composer install && php artisan key:generate && php artisan migrate --force"
     startCommand: "php artisan serve --host 0.0.0.0 --port 10000"
-    plan: free
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: YOUR_DB_HOST
+      - key: DB_PORT
+        value: 3306
+      - key: DB_DATABASE
+        value: YOUR_DB_NAME
+      - key: DB_USERNAME
+        value: YOUR_DB_USER
+      - key: DB_PASSWORD
+        value: YOUR_DB_PASSWORD

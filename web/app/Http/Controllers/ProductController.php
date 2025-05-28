@@ -73,12 +73,13 @@ class ProductController extends Controller
             'name' => 'required',
             'brand' => 'required',
             'selling_price' => 'required|numeric',
+            'supplier_price' => 'required|numeric',
             'stock' => 'required|integer',
             'expiry_date' => 'required|date|after:today',
         ]);
 
         $product->update($request->only([
-            'name', 'brand', 'selling_price', 'stock', 'expiry_date'
+            'name', 'brand', 'supplier_price', 'selling_price', 'stock', 'expiry_date'
         ]));
 
         return response()->json([

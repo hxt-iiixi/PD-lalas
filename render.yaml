@@ -2,7 +2,7 @@ services:
   - type: web
     name: pharmacy-app
     env: docker
-    rootDir: web  # 👈 tell Render to look inside the /web folder
+    rootDir: web  # <-- THIS LINE IS ESSENTIAL
     plan: free
 
     buildCommand: |
@@ -20,12 +20,12 @@ services:
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        value: your-db-host
+        value: 127.0.0.1
       - key: DB_PORT
         value: 3306
       - key: DB_DATABASE
-        value: your-db-name
+        value: laravel
       - key: DB_USERNAME
-        value: your-db-user
+        value: root
       - key: DB_PASSWORD
-        value: your-db-password
+        value: 

@@ -15,7 +15,7 @@ services:
       - key: APP_DEBUG
         value: true
       - key: APP_KEY
-        value: base64:S4GIDSWc9uZyg8RSm32CFw1Ir8SBxyJBBnQL0649KC14=
+        value: base64:5UaBlYeeBfksiABvOPR8IvXgzwRbatN1fuWFexAnQpY=
         generateValue: true
       - key: DB_CONNECTION
         value: mysql

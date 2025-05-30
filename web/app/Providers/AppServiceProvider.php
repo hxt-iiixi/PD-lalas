@@ -20,5 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
           Paginator::useBootstrap();
+          \Log::info('Database file exists: ' . (file_exists(database_path('database.sqlite')) ? 'YES' : 'NO'));
+
     }
 }

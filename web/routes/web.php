@@ -1,6 +1,6 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
@@ -89,5 +89,9 @@ Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'appro
 Route::delete('/admin/accounts/reject/{user}', [AccountsController::class, 'reject'])->name('admin.accounts.reject');
 Route::get('/sales/history', [SaleController::class, 'history'])->name('sales.index');
 Route::get('/debug-log', function () {
-    return response()->file(storage_path('logs/laravel.log'));
+    $logFile = storage_path('logs/laravel.log');
+    if (File::exists($logFile)) {
+        return response()->file($logFile);
+    }
+    return 'No log file found';
 });

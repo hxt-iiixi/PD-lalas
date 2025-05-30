@@ -38,6 +38,11 @@
             "license": [
                 "MIT"
             ],
+            "scripts": {
+                "post-root-package-install": ["@php -r \"file_exists('.env') || copy('.env.example', '.env');\""],
+                "post-create-project-cmd": ["@php artisan key:generate --force"]
+            },
+
             "description": "Arbitrary-precision arithmetic library",
             "keywords": [
                 "Arbitrary-precision",

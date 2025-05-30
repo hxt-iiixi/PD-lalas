@@ -14,6 +14,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy project files
 COPY . .
 
+# Create SQLite file
+RUN mkdir -p database && touch database/database.sqlite
+
 # Set correct permissions
 RUN chown -R www-data:www-data /var/www \
  && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
@@ -24,7 +27,5 @@ RUN composer install --optimize-autoloader --no-dev
 # Expose port
 EXPOSE 10000
 
-# ✅ Artisan commands moved to entrypoint
-CMD php artisan config:clear && \
-    php artisan cache:clear && \
-    php artisan serve --host=0.0.0.0 --port=10000
+# ✅ Final command
+CMD php artisan serve --host=0.0.0.0 --port=10000

@@ -24,8 +24,15 @@ RUN chown -R www-data:www-data /var/www \
 # Install PHP dependencies
 RUN composer install --optimize-autoloader --no-dev
 
+
+# Rebuild Laravel config
+RUN php artisan config:clear \
+ && php artisan cache:clear \
+ && php artisan config:cache
+ 
 # Expose port
 EXPOSE 10000
 
 # ✅ Final command
 CMD php artisan serve --host=0.0.0.0 --port=10000
+

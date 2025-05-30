@@ -14,15 +14,17 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Copy project files
 COPY . .
 
-# Ensure permissions are set for Laravel logs and cache folders
+# Ensure correct permissions for Laravel
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-# Clear config/cache before installing dependencies
-RUN php artisan config:clear \
-    && php artisan cache:clear \
-    && composer install --optimize-autoloader --no-dev
+# ✅ Install dependencies first (must come BEFORE artisan commands)
+RUN composer install --optimize-autoloader --no-dev
 
-# Expose port and start Laravel's dev server
+# ✅ Now safe to clear cache/config
+RUN php artisan config:clear \
+    && php artisan cache:clear
+
+# Start Laravel dev server
 EXPOSE 10000
 CMD php artisan serve --host=0.0.0.0 --port=10000

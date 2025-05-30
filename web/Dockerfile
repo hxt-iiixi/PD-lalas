@@ -5,8 +5,8 @@ WORKDIR /var/www
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpng-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
+    git curl zip unzip libpng-dev libonig-dev libxml2-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -29,7 +29,7 @@ RUN composer install --optimize-autoloader --no-dev
 RUN php artisan config:clear \
  && php artisan cache:clear \
  && php artisan config:cache
- 
+
 # Expose port
 EXPOSE 10000
 

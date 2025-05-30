@@ -3,6 +3,7 @@ services:
     name: pharmacy-app
     env: docker
     plan: free
+    dockerfilePath: web/Dockerfile
     region: oregon
     buildCommand: |
       composer install --no-dev --optimize-autoloader

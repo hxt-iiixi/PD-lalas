@@ -1,6 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
@@ -89,16 +90,21 @@ Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'appro
 Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'approve'])->name('admin.accounts.approve');
 Route::delete('/admin/accounts/reject/{user}', [AccountsController::class, 'reject'])->name('admin.accounts.reject');
 Route::get('/sales/history', [SaleController::class, 'history'])->name('sales.index');
+
 Route::get('/debug-log', function () {
-    $logPath = storage_path('logs/laravel.log');
+    try {
+        $logPath = storage_path('logs/laravel.log');
 
-    if (!File::exists($logPath)) {
-        abort(404, 'Log file not found.');
+        if (!File::exists($logPath)) {
+            return response('Log file does not exist.', 404);
+        }
+
+        return response(File::get($logPath), 200)
+            ->header('Content-Type', 'text/plain');
+    } catch (\Throwable $e) {
+        Log::error('Failed to read log: ' . $e->getMessage());
+        return response('Error loading log file.', 500);
     }
-
-    return Response::make(File::get($logPath), 200, [
-        'Content-Type' => 'text/plain',
-    ]);
 });
 
 Route::get('/debug-log', function () {

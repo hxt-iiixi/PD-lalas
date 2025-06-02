@@ -3,7 +3,7 @@
 
 @section('content')
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/app.css') }}">
+ @vite('resources/css/app.css')
 
 <style>
     .profile-container {

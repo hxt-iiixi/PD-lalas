@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>Register</title>
-    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+    @vite('resources/css/app.css')
+
 </head>
 <body class="auth-body">
     <div class="blur-overlay"></div>

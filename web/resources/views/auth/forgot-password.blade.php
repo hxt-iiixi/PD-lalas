@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Forgot Password</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+     @vite('resources/css/app.css')
 </head>
 <body>
 <div class="auth-container">

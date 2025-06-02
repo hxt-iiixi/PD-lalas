@@ -2,7 +2,7 @@
 @section('title', 'Sales History')
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('css/products.css') }}">
+@vite('resources/css/products.css')
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>

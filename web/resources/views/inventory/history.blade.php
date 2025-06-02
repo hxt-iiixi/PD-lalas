@@ -2,7 +2,8 @@
 @section('title', 'Sales History')
 @section('content')
 
-@vite('resources/css/products.css')
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>

@@ -2,7 +2,8 @@
 @section('title', 'Products')
 @section('content')
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
-@vite('resources/css/products.css')
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+
 
 <div class="top-bar">
     <form method="GET" action="{{ route('products.index') }}" class="search-form">

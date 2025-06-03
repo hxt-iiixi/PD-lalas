@@ -312,7 +312,7 @@ body {
     .sidebar {
         position: fixed;
         top: 0;
-        left: -220px;
+        left: -320px;
         height: 100%;
          background-color: #eeedec;
         color: #333;

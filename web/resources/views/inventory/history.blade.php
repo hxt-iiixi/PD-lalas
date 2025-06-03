@@ -6,6 +6,26 @@
 
 
 <style>
+    .button-fill {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Lexend', sans-serif;
+    background-color: transparent;
+}
+.green-button {
+    color: #059669;
+    border: 2px solid #059669;
+    background-color: white;
+}
+.green-button:hover {
+    background-color: #059669;
+    color: white;
+}
     .page-title {
         font-size: 22px;
         font-weight: 600;
@@ -86,6 +106,43 @@
             margin-top: 10px;
         }
     }
+    .search-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.search-form input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 999px;
+    width: 400px;
+    max-width: 100%;
+}
+@media (min-width: 1024px) {
+    .search-form input {
+        width: 500px;
+    }
+}
+.search-form button,
+.clear-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+.search-form button:hover,
+.clear-btn:hover {
+    transform: scale(1.05);
+}
+.clear-btn {
+    background-color: #888;
+}
+
 </style>
 
 <h1 class="page-title">Sales History</h1>

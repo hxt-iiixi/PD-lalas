@@ -2,6 +2,59 @@
 @section('title', 'Accounts')
 
 @section('content')
+
+<style>
+    .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #8b5e3c;
+    margin-top: 30px;
+    padding-left: 10px;
+    border-left: 4px solid #8b5e3c;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+thead {
+    background-color: #f9f9f9;
+    font-weight: 600;
+}
+.status-online {
+    color: green;
+}
+
+.status-offline {
+    color: gray;
+}
+
+.page-section {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    margin-bottom: 30px;
+}
+
+.page-section h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-left: 10px;
+    border-left: 4px solid #8b5e3c;
+    color: #8b5e3c;
+}
+</style>
+
+
 <div class="page-section">
     <h4>Registered Accounts</h4>
 

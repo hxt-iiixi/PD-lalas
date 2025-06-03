@@ -3,6 +3,486 @@
 @section('content')
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+<style>
+body {
+    font-family: 'Rubik', sans-serif;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* === Buttons === */
+.button-fill {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    padding: 8px 16px;
+    font-weight: bold;
+    border-radius: 999px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: transparent;
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.button-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    z-index: -1;
+    transition: width 0.4s ease;
+}
+
+.button-fill:hover::before {
+    width: 100%;
+    left: 0;
+}
+
+.green-button { color: #4caf50; border-color: #4caf50; }
+.green-button::before { background: #4caf50; }
+.green-button:hover { color: white; }
+
+.blue-button { color: #0d6efd; border-color: #0d6efd; }
+.blue-button::before { background: #0d6efd; }
+.blue-button:hover { color: white; }
+
+.red-button { color: #dc3545; border-color: #dc3545; }
+.red-button::before { background: #dc3545; }
+.red-button:hover { color: white; }
+
+.button-fill.active {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* === Filter Tabs === */
+.filter-tabs {
+    margin: 20px 0;
+}
+
+.category-tab {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #eee;
+    margin-right: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    color: #333;
+    transition: color 0.3s ease, background-color 0.3s ease;
+    z-index: 1;
+}
+
+.category-tab::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: #007bff;
+    z-index: -1;
+    transition: width 0.4s ease;
+}
+
+.category-tab:hover::before {
+    width: 100%;
+}
+.category-tab:hover { color: white; }
+
+.category-tab.active {
+    background: #007bff !important;
+    color: white !important;
+    z-index: 1 !important;
+    position: relative;
+    transition: none !important;
+}
+
+.category-tab.active::before,
+.category-tab.active:hover::before,
+.category-tab.active:focus::before,
+.category-tab.all-active::before,
+.category-tab.all-active:hover::before {
+    width: 0 !important;
+    background: transparent !important;
+    transition: none !important;
+}
+
+/* === Table === */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #e6f7f7;
+    margin-top: 20px;
+}
+table th, table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+table th {
+    background-color: #f0f0f0;
+}
+table th:last-child,
+table td:last-child {
+    width: 140px;
+}
+
+/* === Actions === */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    max-width: 160px;
+    margin: 0 auto;
+}
+.action-buttons button {
+    padding: 4px 10px;
+    font-size: 13px;
+    line-height: 1.2;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.action-buttons button:first-child {
+    background-color: #0d6efd;
+    color: white;
+}
+.action-buttons button:last-child {
+    background-color: #dc3545;
+    color: white;
+}
+.action-buttons button:hover {
+    opacity: 0.9;
+    transform: scale(1.03);
+}
+
+/* === Search Form === */
+.search-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.search-form input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 999px;
+    width: 400px;
+    max-width: 100%;
+}
+@media (min-width: 1024px) {
+    .search-form input {
+        width: 500px;
+    }
+}
+.search-form button,
+.clear-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+.search-form button:hover,
+.clear-btn:hover {
+    transform: scale(1.05);
+}
+.clear-btn {
+    background-color: #888;
+}
+
+/* === Toast === */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #28a745;
+    color: white;
+    padding: 14px 22px;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 2000;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.toast button {
+    background: white;
+    color: #28a745;
+    border: none;
+    padding: 6px 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+.toast button:hover {
+    background: #e0e0e0;
+}
+
+/* === Low Stock Tags === */
+.low-stock-orange { color: orange; font-weight: bold; }
+.low-stock-red { color: red; font-weight: bold; }
+
+/* === Modal === */
+.modal-overlay,
+.modal-box {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+.modal-overlay.show,
+.modal-box.show {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 25px;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 10px;
+    z-index: 1100;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.close-btn {
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+}
+.modal-box form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.modal-box label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.modal-box input[type="text"],
+.modal-box input[type="number"],
+.modal-box input[type="date"],
+.modal-box select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+.modal-box button[type="submit"] {
+    grid-column: span 2;
+    padding: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.modal-box button[type="submit"]:hover {
+    background: #0056b3;
+}
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1099;
+    display: none;
+}
+.modal-overlay.show {
+    display: block;
+}
+
+/* === Animations === */
+.slide-left { animation: smoothSlideLeft 0.4s ease-in-out forwards; }
+.slide-right { animation: smoothSlideRight 0.4s ease-in-out forwards; }
+@keyframes smoothSlideLeft {
+    0% { opacity: 0; transform: translateX(60px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes smoothSlideRight {
+    0% { opacity: 0; transform: translateX(-60px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+.slide-up { animation: slideUp 0.4s ease-in-out forwards; }
+@keyframes slideUp {
+    0% { opacity: 0; transform: translateY(60px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .modal-box form {
+        grid-template-columns: 1fr;
+    }
+    .modal-box {
+        width: 85%;
+    }
+}
+/* === Improved Filter Dropdown Styling === */
+.filter-btn {
+    padding: 10px 20px;
+    border: 2px solid #007bff;
+    border-radius: 999px;
+    background: transparent;
+    color: #007bff;
+    font-weight: 600;
+    font-family: 'Lexend', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: all 0.2s ease-in-out;
+}
+
+.filter-btn:hover {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.filter-dropdown {
+    display: none;
+    position: absolute;
+    top: 48px;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 14px;
+    padding: 12px 0;
+    width: 200px;
+    z-index: 200;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.2s ease;
+}
+
+.filter-dropdown.show {
+    display: block;
+}
+
+.filter-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    color: #333;
+    font-weight: 500;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.filter-dropdown a:hover {
+    background-color: #f0f8ff;
+    color: #0d6efd;
+}
+
+.filter-dropdown a::before {
+    content: '🔹';
+    font-size: 12px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.filter-dropdown a.active-sort {
+    font-weight: bold;
+    color: #28a745;
+    background-color: #e9fcef;
+}
+
+    .history-card {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.06);
+        background: white;
+        font-family: 'Rubik', sans-serif;
+    }
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    font-weight: 500;
+}
+
+.details-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.details-table th,
+.details-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+</style>
 
 <div class="top-bar">
     <form method="GET" action="{{ route('products.index') }}" class="search-form">

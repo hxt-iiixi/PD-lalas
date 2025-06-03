@@ -2,7 +2,629 @@
 @section('title', 'Dashboard')
 @section('content')
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+<style>
+    /* ===============================
+   DASHBOARD LAYOUT & CARDS
+================================ */
 
+body {
+    font-family: 'Rubik', sans-serif;
+    
+}
+
+h1, h2, h3, .stat-header, .stat-count {
+    font-family: 'Lexend', sans-serif;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.stat-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    border: 2px solid transparent;
+    box-shadow: 0 0 12px 2px rgba(0, 0, 0, 0.08); /* Always-on shadow */
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.stat-header {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #475569;
+}
+
+.stat-count {
+    font-size: 28px;
+    font-weight: bold;
+    color: #0f172a;
+}
+
+.details-link {
+    position: relative;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    padding-bottom: 2px;
+}
+
+.details-link::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.details-link:hover::after {
+    width: 100%;
+}
+
+/* Color-specific styles */
+.stat-card.green .details-link {
+    color: #10b981;
+}
+.stat-card.green .details-link::after {
+    background-color: #10b981;
+}
+.stat-card.green .details-link:hover {
+    color: #059669;
+}
+
+.stat-card.red .details-link {
+    color: #ef4444;
+}
+.stat-card.red .details-link::after {
+    background-color: #ef4444;
+}
+.stat-card.red .details-link:hover {
+    color: #dc2626;
+}
+
+.stat-card.yellow .details-link {
+    color: #f59e0b;
+}
+.stat-card.yellow .details-link::after {
+    background-color: #f59e0b;
+}
+.stat-card.yellow .details-link:hover {
+    color: #d97706;
+}
+
+.stat-card.blue .details-link {
+    color: #3b82f6;
+}
+.stat-card.blue .details-link::after {
+    background-color: #3b82f6;
+}
+.stat-card.blue .details-link:hover {
+    color: #2563eb;
+}
+
+
+
+.stat-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+    transition: transform 0.4s ease;
+}
+.stat-card:hover {
+    transform: scale(1.03); /* ✅ Scale on hover */
+}
+
+
+.stat-card:hover .stat-icon {
+    transform: rotate(360deg);
+}
+
+.stat-card.blue:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+}
+.stat-card.green:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px 2px rgba(16, 185, 129, 0.3);
+    border-color: #10b981;
+}
+.stat-card.yellow:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px 2px rgba(250, 204, 21, 0.3);
+    border-color: #facc15;
+}
+.stat-card.red:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+}
+
+/* Blue */
+.stat-card.blue .stat-icon,
+.stat-card.blue .stat-count {
+    color: #3b82f6; /* vivid */
+}
+.stat-card.blue .stat-header {
+    color: #1e40af; /* darker shade of blue */
+}
+
+/* Green */
+.stat-card.green .stat-icon,
+.stat-card.green .stat-count {
+    color: #10b981;
+}
+.stat-card.green .stat-header {
+    color: #065f46; /* darker shade of green */
+}
+
+/* Yellow */
+.stat-card.yellow .stat-icon,
+.stat-card.yellow .stat-count {
+    color: #f59e0b;
+}
+.stat-card.yellow .stat-header {
+    color: #b45309; /* darker shade of yellow */
+}
+
+/* Red */
+.stat-card.red .stat-icon,
+.stat-card.red .stat-count {
+    color: #ef4444;
+}
+.stat-card.red .stat-header {
+    color: #b91c1c; /* darker shade of red */
+}
+
+/* ===============================
+   SALES SECTION
+================================ */
+.sales-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.sales-form, .sales-log {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.sales-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sales-form input, .sales-form select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-family: 'Lexend', sans-serif;
+}
+
+.sales-log table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border-radius: 16px;
+}
+.sales-log-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  background-color: #e2e8f0; /* must have background */
+  z-index: 1;
+  padding: 12px;
+}
+
+/* Optional styling */
+.sales-log-table-scroll tbody td {
+  padding: 12px;
+  background-color: #f6eded;
+}
+
+/* Optional: nice border under the sticky header */
+.sales-log-table-scroll thead th {
+    border-bottom: 2px solid #cbd5e1;
+}
+.sales-log th {
+    background-color: #e2e8f0;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.sales-log td {
+    background-color: #f6eded;
+    padding: 12px;
+    color: #0f172a;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.sales-log tbody tr:hover td {
+    background-color: #e0f2fe;
+}
+
+tr.highlight-row {
+    background-color: #bbf7d0;
+}
+
+.button-fill {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Lexend', sans-serif;
+    background-color: transparent;
+}
+.green-button {
+    color: #059669;
+    border: 2px solid #059669;
+    background-color: white;
+}
+.green-button:hover {
+    background-color: #059669;
+    color: white;
+}
+
+/* ===============================
+   SALES TABLE
+================================ */
+.sales-log-table-scroll {
+    max-height: 370px; /* enough to show ~5 rows depending on row height */
+    overflow-y: auto;
+    border-radius: 16px;
+    width: 100%;
+     position: relative;
+}
+
+/* Optional: scrollbar style */
+.sales-log-table-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.sales-log-table-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+.sales-log-table-scroll table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+/* Action Column */
+.action-cell {
+    text-align: center;
+    position: relative;
+}
+
+.dots-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.dots-btn:hover {
+    background-color: #f1f5f9;
+}
+
+.dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+  z-index: 9999;
+  position: absolute;
+  top: 30px;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  min-width: 120px;
+}
+
+
+.dropdown-menu a {
+    display: block;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: #0f172a;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+    background-color: #f1f5f9;
+}
+
+.dropdown-menu .delete-link {
+    color: #ef4444;
+}
+.table-info {
+    background-color: #e0f2fe;
+    font-weight: 500;
+}
+
+.undo-button {
+    background-color: white;
+    color: #1e293b;
+    border: 1px solid #1e293b;
+    padding: 4px 10px;
+    font-size: 13px;
+    margin-left: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.undo-button:hover {
+    background-color: #1e293b;
+    color: white;
+}
+
+/* ===============================
+   MODALS
+================================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow-y: auto;
+}
+.modal-content {
+    background: #fff;
+    padding: 24px 28px;
+    margin: 5% auto;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 16px;
+    font-family: 'Lexend', sans-serif;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #1f2937;
+  
+}
+.modal-columns {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.modal-column {
+    flex: 1;
+    min-width: 150px;
+}
+
+.modal-column h4 {
+    background-color: #f1f5f9; /* light gray */
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+.close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #475569;
+}
+
+.modal-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: space-between;
+}
+
+.modal-column {
+    flex: 1;
+    min-width: 220px;
+}
+
+.modal-column h4 {
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.modal-column ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-column li {
+    padding: 6px 0;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 1px solid #f1f5f9;
+}
+.modal-column li:last-child {
+    border-bottom: none;
+}
+.modal-column li.red { color: #ef4444; font-weight: 600; }
+.modal-column li.orange { color: #f59e0b; font-weight: 600; }
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.cancel-button {
+    background-color: white;
+    color: #0f172a;
+    border: 2px solid #cbd5e1;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.cancel-button:hover {
+    background-color: #e0f2fe; /* Light blue */
+    color: #0c4a6e;
+}
+
+.delete-button {
+    background-color: white;
+    color: #b91c1c;
+    border: 2px solid #ef4444;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.delete-button:hover {
+    background-color: #ef4444;
+    color: white;
+}
+
+/* ===============================
+   TOAST MESSAGE
+================================ */
+.toast-message {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #4ade80;
+    color: #1e293b;
+    padding: 14px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-family: 'Lexend', sans-serif;
+    font-weight: 600;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.toast-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===============================
+   RESPONSIVE TWEAKS
+================================ */
+@media (max-width: 480px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .sales-section {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 20px;
+    }
+
+    .sales-form input,
+    .sales-form select {
+        font-size: 14px;
+    }
+
+    .button-fill {
+        font-size: 14px;
+        padding: 10px;
+        width: 100%;
+    }
+
+    .sales-log th, .sales-log td {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    .sales-form label {
+        font-size: 14px;
+    }
+
+    .sales-log h4,
+    .sales-form h4 {
+        font-size: 16px;
+    }
+
+    .modal-grid {
+        flex-direction: column;
+    }
+}
+@media (max-width: 768px) {
+    .sales-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+}
+.sales-grid {
+    display: flex;
+    gap: 24px;
+}
+
+.sales-grid .log-sale {
+    width: 30%;
+}
+
+.sales-grid .sales-log {
+    width: 70%;
+}
+
+@media (max-width: 768px) {
+    .sales-grid {
+        flex-direction: column;
+    }
+
+    .sales-grid .log-sale,
+    .sales-grid .sales-log {
+        width: 100% !important;
+    }
+}
+
+</style>
 
 <div class="dashboard-grid">
    <div class="stat-card blue">

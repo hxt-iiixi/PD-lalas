@@ -1,11 +1,12 @@
 #!/bin/bash
 set -e
 
-echo "📦 Clearing config cache..."
+echo "📦 Installing dependencies..."
+composer install --no-interaction --prefer-dist --optimize-autoloader
+
+echo "🔧 Optimizing Laravel..."
 php artisan config:clear
 php artisan config:cache
 
-echo "🔄 Running migrations..."
+echo "🧱 Running migrations..."
 php artisan migrate --force
-
-echo "✅ Deployment script finished."

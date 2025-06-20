@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'kdvenecia@gmail.com'],
             [
-                'name' => 'Admin User',
+                'name' => 'KEN',
                 'password' => Hash::make('password123'), // You can change this securely later
                 'is_admin' => true, // assumes you have an `is_admin` boolean field
                 'is_active' => true, // if you have an `is_active` field
@@ -23,7 +23,7 @@ class AdminUserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'phai@gmail.com'],
             [
-                'name' => 'Admin User',
+                'name' => 'PHAI',
                 'password' => Hash::make('zachzeth'), // You can change this securely later
                 'is_admin' => true, // assumes you have an `is_admin` boolean field
                 'is_active' => true, // if you have an `is_active` field

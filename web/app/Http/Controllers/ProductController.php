@@ -48,13 +48,13 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'brand' => 'required',
-            'selling_price' => 'required|numeric',
-            'stock' => 'required|integer',
-            'category' => 'required|in:medicine,supplies',
-            'expiry_date' => 'required|date|after:today',
+      $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'brand' => 'required|string|max:255',
+            'selling_price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'category' => 'required|string',
+            'expiry_date' => 'required|date|after_or_equal:today',
         ]);
 
         $product = Product::create($request->only([

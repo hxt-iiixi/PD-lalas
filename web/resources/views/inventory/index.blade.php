@@ -569,16 +569,18 @@ table td:last-child {
             <label>Brand</label>
             <input type="text" name="brand" id="inputBrand" required>
         </div>
+        
+        <div>
+            <label>Selling Price</label>
+            <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
+        </div>
 
         <div>
             <label>Supplier Price</label>
             <input type="number" name="supplier_price" id="inputSupplierPrice" step="0.01" required>
         </div>
 
-        <div>
-            <label>Selling Price</label>
-            <input type="number" name="selling_price" id="inputPrice" step="0.01" required>
-        </div>
+        
 
         <div>
             <label>Stocks</label>

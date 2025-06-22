@@ -51,15 +51,17 @@ class ProductController extends Controller
       $validated = $request->validate([
             'name' => 'required|string|max:255',
             'brand' => 'required|string|max:255',
+            'supplier_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'category' => 'required|string',
             'expiry_date' => 'required|date|after_or_equal:today',
         ]);
 
-        $product = Product::create($request->only([
-            'name', 'brand', 'selling_price', 'stock', 'category', 'expiry_date'
+       $product = Product::create($request->only([
+            'name', 'brand', 'supplier_price', 'selling_price', 'stock', 'category', 'expiry_date'
         ]));
+
 
         return response()->json([
             'message' => 'Product added successfully!',

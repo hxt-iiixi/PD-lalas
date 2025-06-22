@@ -10,18 +10,18 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('products', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('brand');
-        $table->decimal('selling_price', 8, 2);
-        $table->integer('stock');
-        $table->timestamps();
-    });
-
-}
-
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('brand');
+            $table->decimal('supplier_price', 8, 2); 
+            $table->decimal('selling_price', 8, 2);
+            $table->integer('stock');
+            $table->timestamps();
+            $table->softDeletes(); 
+        });
+    }
 
     /**
      * Reverse the migrations.

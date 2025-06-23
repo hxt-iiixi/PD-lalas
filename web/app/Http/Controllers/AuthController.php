@@ -21,7 +21,7 @@ class AuthController extends Controller
         $user = \App\Models\User::where('email', $credentials['email'])->first();
 
         if ($user && !$user->is_approved) {
-            return redirect()->route('admin.login')->with('error', 'Account not yet approved.');
+            return redirect()->back()->with('error', 'Your account is still pending approval.');
         }
 
         if (Auth::attempt($credentials)) {
@@ -40,8 +40,7 @@ class AuthController extends Controller
         }
 
 
-        return redirect()->route('admin.login')->with('error', 'Invalid credentials.');
-
+        return redirect()->back()->with('error', 'Invalid credentials.');
     }
 
 

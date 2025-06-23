@@ -210,11 +210,11 @@ public function updateItems(Request $request)
 
     $total = 0;
     foreach ($data['items'] as $item) {
-        $saleItem = SaleItem::findOrFail($item['item_id']);
-        $saleItem->quantity = $item['quantity'];
-        $saleItem->save();
+        $salesItem = SalesItem::findOrFail($item['item_id']);
+        $salesItem->quantity = $item['quantity'];
+        $salesItem->save();
 
-        $total += $saleItem->price_per_unit * $item['quantity'];
+        $total += $salesItem->price_per_unit * $item['quantity'];
     }
 
     // Reapply discount
@@ -234,10 +234,22 @@ public function deleteItem(Request $request)
         'item_id' => 'required|exists:sale_items,id'
     ]);
 
-    $item = SaleItem::findOrFail($request->item_id);
-    $item->delete();
+    $item = SalesItem::findOrFail($request->item_id);
+    $sale = $item->sale;
+
+    $item->delete(); // delete only once
+
+    // Recalculate total
+    $newTotal = $sale->items->sum(function ($i) {
+        return $i->price_per_unit * $i->quantity;
+    });
+
+    if (in_array($sale->discount_type, ['SC', 'PWD'])) {
+        $newTotal *= 0.8;
+    }
+
+    $sale->total_price = $newTotal;
+    $sale->save();
 
     return response()->json(['success' => true]);
-}
-
 }

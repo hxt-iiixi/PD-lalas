@@ -9,57 +9,65 @@ class SaleController extends Controller
 {
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'discount_type' => 'nullable|in:none,SC,PWD',
-        ]);
+        try {
+            $items = $request->input('items', []);
 
-        $items = $validated['items'];
-        $discountType = $validated['discount_type'] ?? 'none';
-
-        $grandTotal = 0;
-        foreach ($request->items as $item) {
-            $product = Product::find($item['product_id']);
-            
-            if (!$product || $product->stock < $item['quantity']) {
-                return response()->json(['error' => 'Error logging sale. Please check stock or try again.']);
+            if (empty($items)) {
+                throw new \Exception("No items submitted.");
             }
 
-            // Proceed with stock deduction, etc...
-        }
+            $total = 0;
+            $sale = new Sale();
+            $sale->discount_type = $request->input('discount_type', 'none');
+            $sale->save();
 
+            foreach ($items as $index => $item) {
+                $product = Product::find($item['product_id']);
 
-        if ($discountType === 'SC' || $discountType === 'PWD') {
-            $grandTotal *= 0.8;
-        }
+                if (!$product) {
+                    throw new \Exception("Invalid product at row {$index}.");
+                }
 
-        $sale = Sale::create([
-            'discount_type' => $discountType,
-            'total_price' => $grandTotal,
-        ]);
+                $quantity = (int) $item['quantity'];
 
-        $grandTotal = 0;
+                if ($product->stock < $quantity) {
+                    throw new \Exception("Not enough stock for {$product->name}.");
+                }
 
-        // Validate stock and calculate total at the same time
-        foreach ($items as $item) {
-            $product = Product::find($item['product_id']);
+                $product->stock -= $quantity;
+                $product->save();
 
-            if (!$product || $product->stock < $item['quantity']) {
-                return response()->json(['error' => 'Error logging sale. Please check stock or try again.']);
+                $subtotal = $product->price * $quantity;
+                $total += $subtotal;
+
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'price' => $product->price,
+                ]);
             }
 
-            $grandTotal += $product->price * $item['quantity'];
-        }
+            // Apply discount
+            $discount = 0;
+            if ($sale->discount_type === 'senior') {
+                $discount = $total * 0.2;
+            } elseif ($sale->discount_type === 'pwd') {
+                $discount = $total * 0.15;
+            }
 
-        // Apply discount AFTER computing total
-        if (in_array($discountType, ['SC', 'PWD'])) {
-            $grandTotal *= 0.8;
-        }
+            $sale->total = $total;
+            $sale->discount = $discount;
+            $sale->final_total = $total - $discount;
+            $sale->save();
 
-        return response()->json(['success' => true, 'message' => 'Sale logged successfully.']);
+            return response()->json(['message' => 'Sale logged successfully.']);
+        } catch (\Exception $e) {
+            \Log::error('Sale log error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error logging sale: ' . $e->getMessage()], 500);
+        }
     }
+
 
     public function update(Request $request)
     {

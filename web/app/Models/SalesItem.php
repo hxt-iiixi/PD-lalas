@@ -5,7 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SaleItem extends Model
+class SalesItem extends Model
 {
     protected $fillable = ['sale_id', 'product_id', 'quantity', 'price_per_unit'];
     

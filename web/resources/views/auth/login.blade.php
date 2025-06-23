@@ -174,11 +174,10 @@
         <div class="auth-container">
             <h1>Login</h1>
 
-            @if (session('error'))
-                <div class="toast toast-error">
-                    {{ session('error') }}
-                </div>
+          @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
+
 
             @if (session('success'))
                 <div class="toast toast-success">

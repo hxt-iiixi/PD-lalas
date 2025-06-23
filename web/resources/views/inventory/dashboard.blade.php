@@ -667,17 +667,23 @@ tr.highlight-row {
                 <form id="logSaleForm">
                     @csrf
 
-                    <label for="product_id">Select Product:</label>
-                    <select name="product_id" required>
-                        @foreach(App\Models\Product::all() as $product)
-                            <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
-                        @endforeach
-                    </select>
+                    <div id="productRows">
+                        <div class="product-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <select name="items[0][product_id]" required class="form-select" style="flex: 1;">
+                                <option value="">Select product</option>
+                                @foreach(App\Models\Product::all() as $product)
+                                    <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
+                                @endforeach
+                            </select>
 
-                    <label for="quantity">Quantity:</label>
-                    <input type="number" name="quantity" min="1" required>
+                            <input type="number" name="items[0][quantity]" min="1" required placeholder="Qty" style="width: 80px; border-radius: 8px; border: 1px solid #ccc; padding: 6px;">
 
-                    <!-- ✅ Discount Dropdown -->
+                            <button type="button" class="remove-row" style="color: red; font-weight: bold;">✕</button>
+                        </div>
+                    </div>
+
+                    <button type="button" id="addRowBtn" class="button-fill green-button" style="margin-bottom: 16px;">➕ Add Item</button>
+
                     <label for="discount_type">Discount Type:</label>
                     <select name="discount_type" id="discount_type" class="form-select">
                         <option value="none">None</option>
@@ -685,8 +691,9 @@ tr.highlight-row {
                         <option value="PWD">PWD (20%)</option>
                     </select>
 
-                    <button type="submit" class="button-fill green-button">Log Sale</button>
+                    <button type="submit" class="button-fill green-button" style="margin-top: 10px;">Log Sale</button>
                 </form>
+
             </div>
         </div>
         <div class="sales-log" style="width: 70%;">
@@ -708,25 +715,42 @@ tr.highlight-row {
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($todaySales as $sale)
+                           @forelse($todaySales as $sale)
                                 <tr>
                                     <td>{{ $sale->created_at->timezone('Asia/Manila')->format('h:i A') }}</td>
-                                    <td>{{ $sale->product->name ?? 'Deleted Product' }}</td>
-                                    <td>{{ $sale->quantity }}</td>
-                                    <td>{{ $sale->formatted_discount }}</td>
+                                    <td>
+                                        @foreach($sale->items as $item)
+                                            {{ $item->product->name ?? 'Deleted Product' }} ({{ $item->quantity }} pcs)<br>
+                                        @endforeach
+                                    </td>
+                                    <td>
+                                        @if ($sale->discount_type === 'SC') Senior Citizen (20%)
+                                        @elseif ($sale->discount_type === 'PWD') PWD (20%)
+                                        @else None
+                                        @endif
+                                    </td>
                                     <td>₱{{ number_format($sale->total_price, 2) }}</td>
-                                    <td class="action-cell">
+                                   <td class="action-cell">
                                         <button class="dots-btn"
-                                            onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name ?? 'Deleted' }}', {{ $sale->product_id }}, {{ $sale->quantity }})"
-                                        >⋮</button>
+                                            onclick="openSaleDetailsModal({{ $sale->id }})">
+                                            ⋮
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr id="noSalesRow">
-                                    <td colspan="6" style="text-align: center;">No sales recorded today.</td>
+                                    <td colspan="5" style="text-align: center;">No sales recorded today.</td>
                                 </tr>
                             @endforelse
                         </tbody>
+                        @if (!$todaySales->isEmpty())
+                            <tfoot>
+                                <tr style="font-weight: bold; background-color: #f1f5f9;">
+                                    <td colspan="3" style="text-align: right;">Grand Total:</td>
+                                    <td colspan="2">₱{{ number_format($todaySales->sum('total_price'), 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        @endif
                     </table>
                 </div>
             @endif
@@ -860,11 +884,87 @@ tr.highlight-row {
   </div>
 </div>
 
+<!-- Sale Details Modal -->
+<div id="saleDetailsModal" class="modal">
+  <div class="modal-content" style="max-width: 600px;">
+    <span class="close" onclick="$('#saleDetailsModal').hide()">&times;</span>
+    <h3>Sale Details</h3>
+    <form id="editSaleItemsForm">
+        @csrf
+        <input type="hidden" name="sale_id" id="saleDetailsSaleId">
+
+        <div id="saleItemsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="submit" class="button-fill green-button">Update</button>
+            <button type="button" class="button-fill cancel-button" onclick="$('#saleDetailsModal').hide()">Cancel</button>
+        </div>
+    </form>
+  </div>
+</div>
 
 
 
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+function openSaleDetailsModal(saleId) {
+    $.get(`/sales/${saleId}/items`, function (res) {
+        if (!res.success) return alert("Failed to fetch sale data.");
+
+        $('#saleDetailsSaleId').val(res.sale.id);
+        const container = $('#saleItemsContainer');
+        container.empty();
+
+           res.sale.items.forEach((item, idx) => {
+            container.append(`
+                <div class="sale-item-row" data-item-id="${item.id}" style="display: flex; gap: 12px; align-items: center;">
+                    <strong style="flex: 1;">${item.product_name}</strong>
+                    <input type="number" name="items[${idx}][quantity]" value="${item.quantity}" min="1" required style="width: 80px;">
+                    <input type="hidden" name="items[${idx}][item_id]" value="${item.id}">
+                    <button type="button" class="delete-item-btn" style="color: red;">🗑</button>
+                </div>
+            `);
+        });
+
+        $('#saleDetailsModal').show();
+    });
+}
+
+// Handle update submit
+$('#editSaleItemsForm').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const data = form.serialize();
+
+    $.post("/sales/update-items", data, function (res) {
+        if (res.success) {
+            showToast('Sale updated successfully.', 'green');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert(res.message || 'Failed to update sale.');
+        }
+    });
+});
+
+$(document).on('click', '.delete-item-btn', function () {
+    const row = $(this).closest('.sale-item-row');
+    const itemId = row.data('item-id');
+
+    if (confirm("Delete this item from sale?")) {
+        $.post("/sales/delete-item", {
+            _token: "{{ csrf_token() }}",
+            item_id: itemId
+        }, function (res) {
+            if (res.success) {
+                row.remove();
+                showToast('Item deleted.', 'red');
+            }
+        });
+    }
+});
+
+</script>
 
 <script>
 
@@ -1215,7 +1315,31 @@ $(document).ready(function () {
         localStorage.removeItem('toastColor');
     }
 });
+let rowIndex = 1;
 
+$('#addRowBtn').click(function () {
+    const newRow = `
+    <div class="product-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <select name="items[${rowIndex}][product_id]" required class="form-select" style="flex: 1;">
+            <option value="">Select product</option>
+            @foreach(App\Models\Product::all() as $product)
+                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
+            @endforeach
+        </select>
+
+        <input type="number" name="items[${rowIndex}][quantity]" min="1" required placeholder="Qty" style="width: 80px; border-radius: 8px; border: 1px solid #ccc; padding: 6px;">
+
+        <button type="button" class="remove-row" style="color: red; font-weight: bold;">✕</button>
+    </div>`;
+    
+    $('#productRows').append(newRow);
+    rowIndex++;
+});
+
+// Remove row on ✕ click
+$(document).on('click', '.remove-row', function () {
+    $(this).closest('.product-row').remove();
+});
 </script>
 
 

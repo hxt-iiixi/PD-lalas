@@ -9,51 +9,49 @@ class SaleController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
-            'discount_type' => 'nullable|string'
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'discount_type' => 'nullable|in:none,SC,PWD',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $items = $validated['items'];
+        $discountType = $validated['discount_type'] ?? 'none';
 
-        if ($product->stock < $request->quantity) {
-            return response()->json(['error' => 'Not enough stock'], 400);
+        $grandTotal = 0;
+        foreach ($items as $item) {
+            $product = Product::find($item['product_id']);
+            $subtotal = $product->price * $item['quantity'];
+            $grandTotal += $subtotal;
+
+            if ($product->stock < $item['quantity']) {
+                return response()->json(['error' => "Insufficient stock for {$product->name}"], 400);
+            }
         }
 
-        $unitPrice = $product->selling_price;
-        $qty = $request->quantity;
-
-        // Normalize discount type
-       $discountType = strtoupper($request->discount_type ?? 'NONE');
-        $discountType = in_array($discountType, ['SC', 'PWD']) ? $discountType : 'NONE';
-        $discountMultiplier = $discountType !== 'NONE' ? 0.8 : 1.0;
-
-        $total = $unitPrice * $qty * $discountMultiplier;
+        if ($discountType === 'SC' || $discountType === 'PWD') {
+            $grandTotal *= 0.8;
+        }
 
         $sale = Sale::create([
-            'product_id' => $product->id,
-            'quantity' => $qty,
-            'total_price' => $total,
             'discount_type' => $discountType,
+            'total_price' => $grandTotal,
         ]);
 
-        $product->decrement('stock', $qty);
+        foreach ($items as $item) {
+            $product = Product::find($item['product_id']);
+            $product->stock -= $item['quantity'];
+            $product->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Sale logged successfully.',
-            'id' => $sale->id,
-            'product_id' => $product->id,
-            'product' => $product->name,
-            'quantity' => $qty,
-            'discount_type' => $discountType,
-            'total' => number_format($total, 2),
-            'time' => now()->timezone('Asia/Manila')->format('h:i A'),
-            'updatedStock' => $product->stock,
-            'updatedTotalProfit' => number_format(Sale::sum('total_price'), 2),
-            'updatedTotalSold' => Sale::sum('quantity'),
-        ]);
+            $sale->items()->create([
+                'product_id' => $product->id,
+                'quantity' => $item['quantity'],
+                'price_per_unit' => $product->price,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Sale logged successfully.']);
     }
 
     public function update(Request $request)
@@ -182,5 +180,64 @@ class SaleController extends Controller
         ]);
     }
 
+public function fetchItems(Sale $sale)
+{
+    $sale->load('items.product');
+
+    return response()->json([
+        'success' => true,
+        'sale' => [
+            'id' => $sale->id,
+            'items' => $sale->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product_name' => $item->product->name ?? 'Deleted Product',
+                    'quantity' => $item->quantity,
+                ];
+            })
+        ]
+    ]);
+}
+
+public function updateItems(Request $request)
+{
+    $data = $request->validate([
+        'sale_id' => 'required|exists:sales,id',
+        'items' => 'required|array',
+        'items.*.item_id' => 'required|exists:sale_items,id',
+        'items.*.quantity' => 'required|integer|min:1'
+    ]);
+
+    $total = 0;
+    foreach ($data['items'] as $item) {
+        $saleItem = SaleItem::findOrFail($item['item_id']);
+        $saleItem->quantity = $item['quantity'];
+        $saleItem->save();
+
+        $total += $saleItem->price_per_unit * $item['quantity'];
+    }
+
+    // Reapply discount
+    $sale = Sale::find($data['sale_id']);
+    if (in_array($sale->discount_type, ['SC', 'PWD'])) {
+        $total *= 0.8;
+    }
+
+    $sale->total_price = $total;
+    $sale->save();
+
+    return response()->json(['success' => true]);
+}
+public function deleteItem(Request $request)
+{
+    $request->validate([
+        'item_id' => 'required|exists:sale_items,id'
+    ]);
+
+    $item = SaleItem::findOrFail($request->item_id);
+    $item->delete();
+
+    return response()->json(['success' => true]);
+}
 
 }

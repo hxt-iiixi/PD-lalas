@@ -46,7 +46,7 @@ class SaleController extends Controller
                 $subtotal = $product->price * $quantity;
                 $total += $subtotal;
 
-                SaleItem::create([
+                SalesItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $product->id,
                     'quantity' => $quantity,

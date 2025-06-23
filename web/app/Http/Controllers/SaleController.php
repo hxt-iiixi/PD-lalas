@@ -20,15 +20,16 @@ class SaleController extends Controller
         $discountType = $validated['discount_type'] ?? 'none';
 
         $grandTotal = 0;
-        foreach ($items as $item) {
+        foreach ($request->items as $item) {
             $product = Product::find($item['product_id']);
-            $subtotal = $product->price * $item['quantity'];
-            $grandTotal += $subtotal;
-
-            if ($product->stock < $item['quantity']) {
-                return response()->json(['error' => "Insufficient stock for {$product->name}"], 400);
+            
+            if (!$product || $product->stock < $item['quantity']) {
+                return response()->json(['error' => 'Error logging sale. Please check stock or try again.']);
             }
+
+            // Proceed with stock deduction, etc...
         }
+
 
         if ($discountType === 'SC' || $discountType === 'PWD') {
             $grandTotal *= 0.8;
@@ -39,16 +40,22 @@ class SaleController extends Controller
             'total_price' => $grandTotal,
         ]);
 
+        $grandTotal = 0;
+
+        // Validate stock and calculate total at the same time
         foreach ($items as $item) {
             $product = Product::find($item['product_id']);
-            $product->stock -= $item['quantity'];
-            $product->save();
 
-            $sale->items()->create([
-                'product_id' => $product->id,
-                'quantity' => $item['quantity'],
-                'price_per_unit' => $product->price,
-            ]);
+            if (!$product || $product->stock < $item['quantity']) {
+                return response()->json(['error' => 'Error logging sale. Please check stock or try again.']);
+            }
+
+            $grandTotal += $product->price * $item['quantity'];
+        }
+
+        // Apply discount AFTER computing total
+        if (in_array($discountType, ['SC', 'PWD'])) {
+            $grandTotal *= 0.8;
         }
 
         return response()->json(['success' => true, 'message' => 'Sale logged successfully.']);
@@ -252,4 +259,5 @@ public function deleteItem(Request $request)
     $sale->save();
 
     return response()->json(['success' => true]);
+}
 }

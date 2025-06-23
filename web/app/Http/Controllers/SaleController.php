@@ -22,16 +22,21 @@ class SaleController extends Controller
             $sale->save();
 
             foreach ($items as $index => $item) {
-                $product = Product::find($item['product_id']);
+                $productId = $item['product_id'] ?? null;
+                $quantity = (int) ($item['quantity'] ?? 0);
 
-                if (!$product) {
-                    throw new \Exception("Invalid product at row {$index}.");
+                if (!$productId || $quantity <= 0) {
+                    throw new \Exception("Invalid product or quantity at row " . ($index + 1));
                 }
 
-                $quantity = (int) $item['quantity'];
+                $product = Product::find($productId);
+
+                if (!$product) {
+                    throw new \Exception("Product not found for ID: {$productId}");
+                }
 
                 if ($product->stock < $quantity) {
-                    throw new \Exception("Not enough stock for {$product->name}.");
+                    throw new \Exception("Not enough stock for {$product->name} (Available: {$product->stock}, Tried: {$quantity})");
                 }
 
                 $product->stock -= $quantity;
@@ -63,11 +68,10 @@ class SaleController extends Controller
 
             return response()->json(['message' => 'Sale logged successfully.']);
         } catch (\Exception $e) {
-            \Log::error('Sale log error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error logging sale: ' . $e->getMessage()], 500);
+            \Log::error('SaleController error: ' . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-
 
     public function update(Request $request)
     {

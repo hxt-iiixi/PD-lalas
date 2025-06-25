@@ -176,15 +176,12 @@ class SaleController extends Controller
             return response()->json(['success' => false, 'message' => 'No sale to restore.']);
         }
 
-        $sale = new Sale();
-        $sale->product_id = $lastDeleted['product_id'];
-        $sale->quantity = $lastDeleted['quantity'];
-        $sale->discount_type = $lastDeleted['discount_type'];
-        $sale->total_price = $lastDeleted['total_price'];
-        $sale->created_at = now();
-        $sale->updated_at = now();
-        $sale->save();
-
+     $sale = new Sale();
+    $sale->discount_type = $lastDeleted['discount_type'];
+    $sale->total_price = $lastDeleted['total_price'];
+    $sale->created_at = now();
+    $sale->updated_at = now();
+    $sale->save();
 
         // Restore stock
         $product = Product::find($sale->product_id);

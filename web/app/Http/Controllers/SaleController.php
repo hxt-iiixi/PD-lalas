@@ -9,69 +9,71 @@ use App\Models\SalesItem;
 class SaleController extends Controller
 {
     public function store(Request $request)
-{
-    try {
-        $items = $request->input('items', []);
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'discount_type' => 'nullable|string|in:none,SC,PWD',
+        ]);
 
-        if (empty($items)) {
-            throw new \Exception("No items submitted.");
-        }
-
-        $total = 0;
+        // Create the sale
         $sale = new Sale();
-        $sale->discount_type = $request->input('discount_type', 'none');
+        $sale->discount_type = $validated['discount_type'] ?? 'none';
         $sale->save();
 
-        foreach ($items as $index => $item) {
-            $productId = $item['product_id'] ?? null;
-            $quantity = (int) ($item['quantity'] ?? 0);
+        $finalTotal = 0;
 
-            if (!$productId || $quantity <= 0) {
-                throw new \Exception("Invalid product or quantity at row " . ($index + 1));
+        foreach ($validated['items'] as $item) {
+            $product = Product::find($item['product_id']);
+
+            // Check stock
+            if ($product->stock < $item['quantity']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Not enough stock for {$product->name}",
+                ], 400);
             }
 
-            $product = Product::find($productId);
-            if (!$product) {
-                throw new \Exception("Product not found for ID: {$productId}");
-            }
+            $price = $product->price * $item['quantity'];
+            $finalTotal += $price;
 
-            if ($product->stock < $quantity) {
-                throw new \Exception("Not enough stock for {$product->name} (Available: {$product->stock}, Tried: {$quantity})");
-            }
-
-            $product->stock -= $quantity;
-            $product->save();
-
-            $subtotal = $product->price * $quantity;
-            $total += $subtotal;
-
-           SalesItem::create([
-                'sale_id' => $sale->id,
-                'product_id' => $product->id,
-                'quantity' => $quantity,
-                'price_per_unit' => $product->price, // Correct column name
+            // Create item row
+            $sale->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $product->price,
+                'total_price' => $price,
             ]);
+
+            // Decrease stock
+            $product->stock -= $item['quantity'];
+            $product->save();
         }
 
         // Apply discount
-        $discount = 0;
-        if ($sale->discount_type === 'senior') {
-            $discount = $total * 0.2;
-        } elseif ($sale->discount_type === 'pwd') {
-            $discount = $total * 0.15;
+        if ($sale->discount_type === 'SC' || $sale->discount_type === 'PWD') {
+            $finalTotal *= 0.8; // 20% off
         }
 
-        $sale->total_price = $total;
-        $sale->discount = $discount;
-        $sale->final_total = $total - $discount;
+        $sale->final_total = round($finalTotal, 2);
         $sale->save();
 
-        return response()->json(['message' => 'Sale logged successfully.']);
-    } catch (\Exception $e) {
-        \Log::error('SaleController error: ' . $e->getMessage());
-        return response()->json(['message' => $e->getMessage()], 500);
+        return response()->json([
+            'success' => true,
+            'message' => 'Sale logged successfully!',
+            'id' => $sale->id,
+            'product' => $product->name,
+            'product_id' => $product->id,
+            'quantity' => $item['quantity'],
+            'discount_type' => $sale->discount_type,
+            'total' => number_format($finalTotal, 2),
+            'time' => $sale->created_at->format('h:i A'),
+            'updatedTotalProfit' => Sale::sum('final_total'),
+            'updatedTotalSold' => SalesItem::sum('quantity'),
+            'updatedStock' => $product->stock,
+        ]);
     }
-}
 
     public function update(Request $request)
     {

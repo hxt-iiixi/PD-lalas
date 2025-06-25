@@ -26,10 +26,15 @@ class Sale extends Model
     {
         $this->attributes['discount_type'] = strtoupper($value ?? 'NONE');
     }
-  public function items()
-    {
-        return $this->hasMany(\App\Models\SalesItem::class);
-    }
-
+public function items()
+{
+    return $this->hasMany(SalesItem::class);
+}
+public function getTotalPriceAttribute()
+{
+    return $this->items->sum(function ($item) {
+        return $item->quantity * $item->price_per_unit;
+    });
+}
 
 }

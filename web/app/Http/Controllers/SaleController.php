@@ -9,70 +9,69 @@ use App\Models\SalesItem;
 class SaleController extends Controller
 {
     public function store(Request $request)
-    {
-        try {
-            $items = $request->input('items', []);
+{
+    try {
+        $items = $request->input('items', []);
 
-            if (empty($items)) {
-                throw new \Exception("No items submitted.");
-            }
-
-            $total = 0;
-            $sale = new Sale();
-            $sale->discount_type = $request->input('discount_type', 'none');
-            $sale->save();
-
-            foreach ($items as $index => $item) {
-                $productId = $item['product_id'] ?? null;
-                $quantity = (int) ($item['quantity'] ?? 0);
-
-                if (!$productId || $quantity <= 0) {
-                    throw new \Exception("Invalid product or quantity at row " . ($index + 1));
-                }
-
-                $product = Product::find($productId);
-
-                if (!$product) {
-                    throw new \Exception("Product not found for ID: {$productId}");
-                }
-
-                if ($product->stock < $quantity) {
-                    throw new \Exception("Not enough stock for {$product->name} (Available: {$product->stock}, Tried: {$quantity})");
-                }
-
-                $product->stock -= $quantity;
-                $product->save();
-
-                $subtotal = $product->price * $quantity;
-                $total += $subtotal;
-
-                SalesItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $product->id,
-                    'quantity' => $quantity,
-                    'price' => $product->price,
-                ]);
-            }
-
-            // Apply discount
-            $discount = 0;
-            if ($sale->discount_type === 'senior') {
-                $discount = $total * 0.2;
-            } elseif ($sale->discount_type === 'pwd') {
-                $discount = $total * 0.15;
-            }
-
-            $sale->total = $total;
-            $sale->discount = $discount;
-            $sale->final_total = $total - $discount;
-            $sale->save();
-
-            return response()->json(['message' => 'Sale logged successfully.']);
-        } catch (\Exception $e) {
-            \Log::error('SaleController error: ' . $e->getMessage());
-            return response()->json(['message' => $e->getMessage()], 500);
+        if (empty($items)) {
+            throw new \Exception("No items submitted.");
         }
+
+        $total = 0;
+        $sale = new Sale();
+        $sale->discount_type = $request->input('discount_type', 'none');
+        $sale->save();
+
+        foreach ($items as $index => $item) {
+            $productId = $item['product_id'] ?? null;
+            $quantity = (int) ($item['quantity'] ?? 0);
+
+            if (!$productId || $quantity <= 0) {
+                throw new \Exception("Invalid product or quantity at row " . ($index + 1));
+            }
+
+            $product = Product::find($productId);
+            if (!$product) {
+                throw new \Exception("Product not found for ID: {$productId}");
+            }
+
+            if ($product->stock < $quantity) {
+                throw new \Exception("Not enough stock for {$product->name} (Available: {$product->stock}, Tried: {$quantity})");
+            }
+
+            $product->stock -= $quantity;
+            $product->save();
+
+            $subtotal = $product->price * $quantity;
+            $total += $subtotal;
+
+           SalesItem::create([
+                'sale_id' => $sale->id,
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+                'price_per_unit' => $product->price, // Correct column name
+            ]);
+        }
+
+        // Apply discount
+        $discount = 0;
+        if ($sale->discount_type === 'senior') {
+            $discount = $total * 0.2;
+        } elseif ($sale->discount_type === 'pwd') {
+            $discount = $total * 0.15;
+        }
+
+        $sale->total_price = $total;
+        $sale->discount = $discount;
+        $sale->final_total = $total - $discount;
+        $sale->save();
+
+        return response()->json(['message' => 'Sale logged successfully.']);
+    } catch (\Exception $e) {
+        \Log::error('SaleController error: ' . $e->getMessage());
+        return response()->json(['message' => $e->getMessage()], 500);
     }
+}
 
     public function update(Request $request)
     {
@@ -125,7 +124,7 @@ class SaleController extends Controller
 
     public function history(Request $request)
 {
-    $query = Sale::with('product');
+    $query = Sale::with('items.product')->orderBy('created_at', 'desc');
 
     $date = $request->input('date');
 
@@ -148,8 +147,8 @@ class SaleController extends Controller
     $dailySummary = [];
 
     foreach ($sales as $date => $daySales) {
-        $totalSold = $daySales->sum('quantity');
-        $totalProfit = $daySales->sum(fn($s) => $s->total_price);
+        $totalSold = $daySales->sum(fn($sale) => $sale->items->sum('quantity'));
+        $totalProfit = $daySales->sum(fn($sale) => $sale->items->sum(fn($i) => $i->quantity * $i->price_per_unit));
         $dailySummary[] = [
             'date' => $date,
             'totalSold' => $totalSold,

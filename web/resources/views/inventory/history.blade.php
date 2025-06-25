@@ -180,10 +180,20 @@
                         @foreach ($day['sales'] as $sale)
                             <tr>
                                 <td>{{ $sale->created_at->format('H:i') }}</td>
-                                <td>{{ $sale->product->name }}</td>
-                                <td>{{ $sale->quantity }}</td>
-                                <td>{{ ucfirst($sale->discount_type) }}</td>
-                                <td>{{ number_format($sale->total_price, 2) }}</td>
+                                <td colspan="4">
+                                    <ul style="padding-left: 16px; list-style-type: disc;">
+                                        @foreach ($sale->items as $item)
+                                            <li>
+                                                {{ $item->product->name }} × {{ $item->quantity }} —
+                                                ₱{{ number_format($item->price_per_unit * $item->quantity, 2) }}
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                    <div style="margin-top: 6px;">
+                                        Discount: ₱{{ number_format($sale->discount, 2) }} |
+                                        Final Total: <strong>₱{{ number_format($sale->final_total, 2) }}</strong>
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

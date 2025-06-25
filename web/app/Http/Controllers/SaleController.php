@@ -36,10 +36,11 @@ class SaleController extends Controller
             $product->save();
 
             // Save each sale item
-            SaleItem::create([
+            SalesItem::create([
                 'sale_id' => $sale->id,
                 'product_id' => $product->id,
                 'quantity' => $item['quantity'],
+                'price_per_unit' => $product->price,
             ]);
 
             $total += $product->price * $item['quantity'];
@@ -50,15 +51,15 @@ class SaleController extends Controller
             $total *= 0.8; // 20% off
         }
 
-        $sale->final_total = $total;
+        $sale->total_price  = $total;
         $sale->save();
 
         return response()->json([
             'id' => $sale->id,
             'message' => 'Sale logged successfully!',
             'discount_type' => $sale->discount_type,
-            'total' => number_format($sale->final_total, 2),
-            'updatedTotalProfit' => number_format(Sale::sum('final_total'), 2),
+            'total' => number_format($sale->total_price , 2),
+            'updatedTotalProfit' => number_format(Sale::sum('total_price '), 2),
             'updatedTotalSold' => SaleItem::sum('quantity'),
             'time' => $sale->created_at->format('h:i A'),
             'product' => 'Multiple', // You can customize this if single item

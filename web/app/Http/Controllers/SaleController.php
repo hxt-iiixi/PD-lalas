@@ -59,8 +59,8 @@ class SaleController extends Controller
             'message' => 'Sale logged successfully!',
             'discount_type' => $sale->discount_type,
             'total' => number_format($sale->total_price , 2),
-            'updatedTotalProfit' => number_format(Sale::sum('total_price '), 2),
-            'updatedTotalSold' => SaleItem::sum('quantity'),
+            'updatedTotalProfit' => number_format(Sale::sum('total_price'), 2),
+            'updatedTotalSold' => SalesItem::sum('quantity'),
             'time' => $sale->created_at->format('h:i A'),
             'product' => 'Multiple', // You can customize this if single item
             'product_id' => $request->items[0]['product_id'],
@@ -78,8 +78,15 @@ class SaleController extends Controller
         ]);
 
         $sale = Sale::findOrFail($request->sale_id);
-        $product = Product::findOrFail($sale->product_id);
+        $salesItem = $sale->items()->first();
 
+        if (!$salesItem) {
+            return response()->json(['error' => 'No sale item found.'], 400);
+        }
+
+        $product = $salesItem->product;
+
+        // Update stock
         $product->increment('stock', $request->original_quantity);
 
         if ($product->stock < $request->quantity) {
@@ -88,23 +95,30 @@ class SaleController extends Controller
 
         $product->decrement('stock', $request->quantity);
 
-        $sale->update([
-            'quantity' => $request->quantity,
-            'total_price' => $product->selling_price * $request->quantity,
+        // Update item
+        $salesItem->update([
+            'quantity' => $request->quantity
         ]);
 
-        return response()->json(['success' => 'Sale updated.']);
-    }
+        // Update total price
+        $total = $sale->items->sum(fn($item) => $item->quantity * $item->price_per_unit);
+        if (in_array($sale->discount_type, ['SC', 'PWD'])) {
+            $total *= 0.8;
+        }
+        $sale->update(['total_price' => $total]);
+                return response()->json(['success' => 'Sale updated.']);
+            }
 
     public function destroy(Request $request)
     {
-        $sale = Sale::findOrFail($request->sale_id);
-        $product = Product::findOrFail($sale->product_id);
+      $sale = Sale::with('items.product')->findOrFail($request->sale_id);
 
-        // Increment stock
-        $product->increment('stock', $sale->quantity);
+        // Restore all item stocks
+        foreach ($sale->items as $item) {
+            $item->product->increment('stock', $item->quantity);
+        }
 
-        // Store sale in session before deletion
+        // Store in session
         session(['last_deleted_sale' => $sale->toArray()]);
 
         $sale->delete();
@@ -112,9 +126,7 @@ class SaleController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Sale deleted successfully.',
-            'sale_id' => $sale->id,
-            'product_id' => $product->id,
-            'updatedStock' => $product->stock
+            'sale_id' => $sale->id
         ]);
     }
 

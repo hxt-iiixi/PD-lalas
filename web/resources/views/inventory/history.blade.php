@@ -191,7 +191,7 @@
                                     </ul>
                                     <div style="margin-top: 6px;">
                                         Discount: ₱{{ number_format($sale->discount, 2) }} |
-                                        Final Total: <strong>₱{{ number_format($sale->final_total, 2) }}</strong>
+                                        Final Total: <strong>₱{{ number_format($sale->total_price, 2) }}</strong>
                                     </div>
                                 </td>
                             </tr>

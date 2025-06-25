@@ -10,68 +10,61 @@ class SaleController extends Controller
 {
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'discount_type' => 'nullable|string|in:none,SC,PWD',
         ]);
 
-        // Create the sale
-        $sale = new Sale();
-        $sale->discount_type = $validated['discount_type'] ?? 'none';
-        $sale->save();
+        // Create Sale
+        $sale = Sale::create([
+            'discount_type' => $request->discount_type ?? 'none',
+        ]);
 
-        $finalTotal = 0;
+        $total = 0;
 
-        foreach ($validated['items'] as $item) {
-            $product = Product::find($item['product_id']);
+        foreach ($request->items as $item) {
+            $product = Product::findOrFail($item['product_id']);
 
-            // Check stock
+            // Decrease product stock
             if ($product->stock < $item['quantity']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Not enough stock for {$product->name}",
-                ], 400);
+                return response()->json(['message' => "Insufficient stock for {$product->name}."], 422);
             }
 
-            $price = $product->price * $item['quantity'];
-            $finalTotal += $price;
-
-            // Create item row
-            $sale->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $product->price,
-                'total_price' => $price,
-            ]);
-
-            // Decrease stock
             $product->stock -= $item['quantity'];
             $product->save();
+
+            // Save each sale item
+            SaleItem::create([
+                'sale_id' => $sale->id,
+                'product_id' => $product->id,
+                'quantity' => $item['quantity'],
+            ]);
+
+            $total += $product->price * $item['quantity'];
         }
 
-        // Apply discount
-        if ($sale->discount_type === 'SC' || $sale->discount_type === 'PWD') {
-            $finalTotal *= 0.8; // 20% off
+        // Apply discount if any
+        if ($request->discount_type === 'SC' || $request->discount_type === 'PWD') {
+            $total *= 0.8; // 20% off
         }
 
-        $sale->final_total = round($finalTotal, 2);
+        $sale->final_total = $total;
         $sale->save();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Sale logged successfully!',
             'id' => $sale->id,
-            'product' => $product->name,
-            'product_id' => $product->id,
-            'quantity' => $item['quantity'],
+            'message' => 'Sale logged successfully!',
             'discount_type' => $sale->discount_type,
-            'total' => number_format($finalTotal, 2),
+            'total' => number_format($sale->final_total, 2),
+            'updatedTotalProfit' => number_format(Sale::sum('final_total'), 2),
+            'updatedTotalSold' => SaleItem::sum('quantity'),
             'time' => $sale->created_at->format('h:i A'),
-            'updatedTotalProfit' => Sale::sum('final_total'),
-            'updatedTotalSold' => SalesItem::sum('quantity'),
-            'updatedStock' => $product->stock,
+            'product' => 'Multiple', // You can customize this if single item
+            'product_id' => $request->items[0]['product_id'],
+            'quantity' => array_sum(array_column($request->items, 'quantity')),
+            'updatedStock' => Product::find($request->items[0]['product_id'])->stock,
         ]);
     }
 

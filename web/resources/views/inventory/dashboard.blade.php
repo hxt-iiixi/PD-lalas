@@ -665,33 +665,23 @@ tr.highlight-row {
             <div class="sales-form">
                 <h4>Log a Sale</h4>
                 <form id="logSaleForm">
-                    @csrf
-
-                    <div id="productRows">
-                        <div class="product-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <select name="items[0][product_id]" required class="form-select" style="flex: 1;">
-                                <option value="">Select product</option>
-                                @foreach(App\Models\Product::all() as $product)
-                                    <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
-                                @endforeach
-                            </select>
-
-                            <input type="number" name="items[0][quantity]" min="1" required placeholder="Qty" style="width: 80px; border-radius: 8px; border: 1px solid #ccc; padding: 6px;">
-
-                            <button type="button" class="remove-row" style="color: red; font-weight: bold;">✕</button>
-                        </div>
-                    </div>
-
-                    <button type="button" id="addRowBtn" class="button-fill green-button" style="margin-bottom: 16px;">➕ Add Item</button>
-
-                    <label for="discount_type">Discount Type:</label>
-                    <select name="discount_type" id="discount_type" class="form-select">
-                        <option value="none">None</option>
-                        <option value="SC">Senior Citizen (20%)</option>
-                        <option value="PWD">PWD (20%)</option>
+                    <select name="product_id" required>
+                        @foreach ($products as $product)
+                            <option value="{{ $product->id }}">
+                                {{ $product->name }} (Stock: {{ $product->stock }})
+                            </option>
+                        @endforeach
                     </select>
 
-                    <button type="submit" class="button-fill green-button" style="margin-top: 10px;">Log Sale</button>
+                    <input type="number" name="quantity" min="1" placeholder="Quantity" required>
+
+                    <select name="discount_type" required>
+                        <option value="None">None</option>
+                        <option value="Senior">Senior</option>
+                        <option value="PWD">PWD</option>
+                    </select>
+
+                    <button type="submit">Log Sale</button>
                 </form>
 
             </div>

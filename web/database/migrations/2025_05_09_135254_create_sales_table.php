@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
             $table->decimal('total_price', 10, 2);
-            $table->enum('discount_type', ['None', 'Senior', 'PWD', 'Custom'])->default('None');
             $table->timestamps();
         });
     }

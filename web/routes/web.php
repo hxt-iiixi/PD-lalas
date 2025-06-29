@@ -88,3 +88,11 @@ Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'appro
 Route::post('/admin/accounts/{user}/approve', [AccountsController::class, 'approve'])->name('admin.accounts.approve');
 Route::delete('/admin/accounts/reject/{user}', [AccountsController::class, 'reject'])->name('admin.accounts.reject');
 Route::get('/sales/history', [SaleController::class, 'history'])->name('sales.index');
+// In routes/web.php (TEMP)
+Route::get('/check-db-env', function () {
+    return [
+        'DB_HOST' => env('DB_HOST'),
+        'DB_USERNAME' => env('DB_USERNAME'),
+        'DB_PASSWORD' => env('DB_PASSWORD'),
+    ];
+});

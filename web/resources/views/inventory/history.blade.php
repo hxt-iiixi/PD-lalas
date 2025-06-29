@@ -177,14 +177,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($day['sales'] as $sale)
-                            <tr>
-                                <td>{{ $sale->created_at->format('H:i') }}</td>
-                                <td>{{ $sale->product->name }}</td>
-                                <td>{{ $sale->quantity }}</td>
-                                <td>{{ ucfirst($sale->discount_type) }}</td>
-                                <td>{{ number_format($sale->total_price, 2) }}</td>
-                            </tr>
+                       @foreach ($day['sales'] as $sale)
+                            @foreach ($sale->items as $item)
+                                <tr>
+                                    <td>{{ $sale->created_at->format('H:i') }}</td>
+                                    <td>{{ $item->product->name ?? 'Deleted Product' }}</td>
+                                    <td>{{ $item->quantity }}</td>
+                                    <td>{{ ucfirst($sale->discount_type) }}</td>
+                                    <td>{{ number_format($sale->total_price, 2) }}</td>
+                                </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>

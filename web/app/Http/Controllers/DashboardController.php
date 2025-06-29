@@ -6,27 +6,30 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Sale;
 use Carbon\Carbon;
+use App\Models\SalesItem;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
    public function index()
-    {
-        $today = Carbon::today();
+{
+    $today = Carbon::today();
 
-        $todaySales = Sale::whereDate('created_at', now()->toDateString())
+    // 🔁 Get today's Sales Items (multi-product sales)
+    $todaySales = SalesItem::with(['product', 'sale'])
+        ->whereDate('created_at', $today)
         ->orderBy('created_at', 'desc')
         ->get();
 
+    // 🔢 Total products
+    $totalProducts = Product::count();
 
-        $totalProducts = Product::count();
-        $today = now()->startOfDay();
+    // 💰 Total profit and quantity from SalesItems
+    $totalProfit = SalesItem::whereDate('created_at', $today)->sum('total_price');
+    $totalSoldQty = SalesItem::whereDate('created_at', $today)->sum('quantity');
 
-        $totalProfit = Sale::where('created_at', '>=', $today)->sum('total_price');
-        $totalSoldQty = Sale::where('created_at', '>=', $today)->sum('quantity');
-
-
-        $soldDetails = $todaySales
+    // 🔝 Most sold products today
+    $soldDetails = $todaySales
         ->groupBy('product_id')
         ->map(function ($group) {
             return (object)[
@@ -34,23 +37,22 @@ class DashboardController extends Controller
                 'total_quantity' => $group->sum('quantity')
             ];
         })
-        ->sortByDesc('total_quantity'); // 🔁 Sort by most sold first
+        ->sortByDesc('total_quantity');
 
-
-       $lowStock = Product::where('stock', '<', 50)
-        ->orderBy('stock', 'asc') // 🔁 Sort by lowest stock first
+    // 📉 Low stock products
+    $lowStock = Product::where('stock', '<', 50)
+        ->orderBy('stock', 'asc')
         ->get();
 
-
-        return view('inventory.dashboard', compact(
-            'todaySales',
-            'totalProducts',
-            'totalProfit',
-            'totalSoldQty',
-            'soldDetails',
-            'lowStock'
-        ));
-    }
+    return view('inventory.dashboard', compact(
+        'todaySales',
+        'totalProducts',
+        'totalProfit',
+        'totalSoldQty',
+        'soldDetails',
+        'lowStock'
+    ));
+}
 
    public function chartData($type)
     {

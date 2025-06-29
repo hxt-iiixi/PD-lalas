@@ -664,28 +664,33 @@ tr.highlight-row {
         <div class="log-sale" style="width: 30%;">
             <div class="sales-form">
                 <h4>Log a Sale</h4>
-                <form id="logSaleForm">
-                    @csrf
+                    <form id="logSaleForm">
+                        <div id="items-container">
+                            <div class="item-group mb-2">
+                                <select name="items[0][product_id]" required>
+                                    @foreach ($products as $product)
+                                        <option value="{{ $product->id }}">
+                                            {{ $product->name }} (₱{{ $product->price }}, Stock: {{ $product->stock }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <input type="number" name="items[0][quantity]" min="1" placeholder="Qty" required>
+                                <button type="button" class="remove-item">Remove</button>
+                            </div>
+                        </div>
 
-                    <label for="product_id">Select Product:</label>
-                    <select name="product_id" required>
-                        @foreach(App\Models\Product::all() as $product)
-                            <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->stock }})</option>
-                        @endforeach
-                    </select>
+                        <button type="button" id="add-item">Add Another Item</button>
 
-                    <label for="quantity">Quantity:</label>
-                    <input type="number" name="quantity" min="1" required>
+                        <div class="mt-2">
+                            <label for="discount_type">Discount:</label>
+                            <select name="discount_type" required>
+                                <option value="None">None</option>
+                                <option value="Senior">Senior (20%)</option>
+                                <option value="PWD">PWD (20%)</option>
+                            </select>
+                        </div>
 
-                    <!-- ✅ Discount Dropdown -->
-                    <label for="discount_type">Discount Type:</label>
-                    <select name="discount_type" id="discount_type" class="form-select">
-                        <option value="none">None</option>
-                        <option value="SC">Senior Citizen (20%)</option>
-                        <option value="PWD">PWD (20%)</option>
-                    </select>
-
-                    <button type="submit" class="button-fill green-button">Log Sale</button>
+                        <button type="submit" class="mt-3">Log Sale</button>
                 </form>
             </div>
         </div>
@@ -708,17 +713,22 @@ tr.highlight-row {
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($todaySales as $sale)
+                           @forelse($todaySales as $sale)
                                 <tr>
                                     <td>{{ $sale->created_at->timezone('Asia/Manila')->format('h:i A') }}</td>
-                                    <td>{{ $sale->product->name ?? 'Deleted Product' }}</td>
-                                    <td>{{ $sale->quantity }}</td>
+                                    <td>
+                                        <ul style="padding-left: 1rem;">
+                                            @foreach ($sale->items as $item)
+                                                <li>{{ $item->product->name ?? 'Deleted Product' }} × {{ $item->quantity }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </td>
+                                    <td>—</td> {{-- optional placeholder for per-product quantity --}}
                                     <td>{{ $sale->formatted_discount }}</td>
                                     <td>₱{{ number_format($sale->total_price, 2) }}</td>
                                     <td class="action-cell">
-                                        <button class="dots-btn"
-                                            onclick="openEditModal({{ $sale->id }}, '{{ $sale->product->name ?? 'Deleted' }}', {{ $sale->product_id }}, {{ $sale->quantity }})"
-                                        >⋮</button>
+                                        {{-- You can revise this button logic later for editing multiple items --}}
+                                        <button class="dots-btn" disabled title="Edit not yet supported for multiple items">⋮</button>
                                     </td>
                                 </tr>
                             @empty
@@ -1021,69 +1031,87 @@ $('#logSaleForm').on('submit', function(e) {
     const button = form.find('button');
     button.prop('disabled', true).text('Logging...');
 
+    const items = [];
+
+    // Loop over all product blocks
+    $('.product-block').each(function () {
+        const product_id = $(this).find('select[name="product_id[]"]').val();
+        const quantity = $(this).find('input[name="quantity[]"]').val();
+
+        if (product_id && quantity) {
+            items.push({
+                product_id: product_id,
+                quantity: quantity
+            });
+        }
+    });
+
+    const discount_type = $('select[name="discount_type"]').val();
+
     $.ajax({
         url: "{{ route('sales.store') }}",
         method: "POST",
-        data: form.serialize(),
+        data: {
+            _token: "{{ csrf_token() }}",
+            discount_type: discount_type,
+            items: items
+        },
         success: function(response) {
             form[0].reset();
             button.prop('disabled', false).text('Log Sale');
 
             if (saleCount === 0) {
-                // 🟢 First sale today → Reload
                 location.reload();
                 return;
             }
 
-            saleCount++; // increment for next calls
+            saleCount++;
 
-            // Build and prepend new row
-            let discountLabel = 'None';
-            if (response.discount_type === 'SC') discountLabel = 'Senior Citizen (20%)';
-            else if (response.discount_type === 'PWD') discountLabel = 'PWD (20%)';
+            response.items.forEach(item => {
+                let discountLabel = 'None';
+                if (response.discount_type === 'SC') discountLabel = 'Senior Citizen (20%)';
+                else if (response.discount_type === 'PWD') discountLabel = 'PWD (20%)';
 
-            const newRow = `
-                <tr class="highlight-row">
-                    <td>${response.time}</td>
-                    <td>${response.product}</td>
-                    <td>${response.quantity}</td>
-                    <td>${discountLabel}</td>
-                    <td>₱${response.total}</td>
-                    <td class="action-cell">
-                        <button class="dots-btn"
-                            onclick="openEditModal(${response.id}, '${response.product}', ${response.product_id}, ${response.quantity})"
-                        >⋮</button>
-                    </td>
-                </tr>
-            `;
+                const newRow = `
+                    <tr class="highlight-row">
+                        <td>${item.time}</td>
+                        <td>${item.product}</td>
+                        <td>${item.quantity}</td>
+                        <td>${discountLabel}</td>
+                        <td>₱${item.total}</td>
+                        <td class="action-cell">
+                            <button class="dots-btn"
+                                onclick="openEditModal(${item.sale_id}, '${item.product}', ${item.product_id}, ${item.quantity})"
+                            >⋮</button>
+                        </td>
+                    </tr>
+                `;
 
-            $('table.table tbody').prepend(newRow);
+                $('table.table tbody').prepend(newRow);
+            });
+
             $('.highlight-row').hide().fadeIn(600).removeClass('highlight-row');
 
-            // Update totals
             $('#total-profit').text('₱' + response.updatedTotalProfit);
             $('#total-sold').text(response.updatedTotalSold);
 
-            // Update stock in dropdown
-            const updatedOption = $(`#logSaleForm select[name="product_id"] option[value="${response.product_id}"]`);
-            if (updatedOption.length) {
-                updatedOption.text(`${response.product} (Stock: ${response.updatedStock})`);
-            }
+            // Update each product's stock in dropdown
+            response.updatedStocks.forEach(stock => {
+                const option = $(`#logSaleForm select[name="product_id[]"] option[value="${stock.id}"]`);
+                if (option.length) {
+                    option.text(`${stock.name} (Stock: ${stock.stock})`);
+                }
+            });
 
-            // Toast
-            const toast = $('#toast');
-            toast.html(response.message).css('display', 'block').addClass('show');
-            setTimeout(() => {
-                toast.removeClass('show');
-                setTimeout(() => toast.css('display', 'none'), 400);
-            }, 3000);
+            showToast(response.message, 'green');
         },
         error: function(err) {
             button.prop('disabled', false).text('Log Sale');
-            alert('Error logging sale. Please check stock or try again.');
+            alert('Error logging sale. Please check all fields or stock levels.');
         }
     });
 });
+
 
 </script>
 
